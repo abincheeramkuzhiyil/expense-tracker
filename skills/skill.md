@@ -199,6 +199,8 @@ interface Expense {
 - Budget tracking and alerts
 - Receipt image attachments
 - Multi-currency support
+- Advanced analytics dashboard with charts
+- Expense Categatory name merger based on user input (e.g., "Food" and "food" should be merged)
 
 ### Technical Debt & Improvements
 - Migration path from LocalStorage to File System

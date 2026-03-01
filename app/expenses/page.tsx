@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import {
   Box,
   Container,
@@ -17,9 +18,24 @@ import ExpenseList from '@/components/expense/ExpenseList';
 import AddExpenseFab from '@/components/expense/AddExpenseFab';
 import { Expense, ViewMode } from '@/types/expense.types';
 
-export default function ExpensesPage() {
-  const [viewMode, setViewMode] = useState<ViewMode>('day');
-  const [currentDate, setCurrentDate] = useState<Date>(new Date());
+function ExpensesPageContent() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  // Initialize from URL search params or defaults
+  const viewParam = searchParams.get('view') as ViewMode | null;
+  const dateParam = searchParams.get('date');
+
+  const [viewMode, setViewMode] = useState<ViewMode>(
+    viewParam && ['day', 'month', 'year'].includes(viewParam) ? viewParam : 'day'
+  );
+  const [currentDate, setCurrentDate] = useState<Date>(() => {
+    if (dateParam) {
+      const parsed = new Date(dateParam);
+      return isNaN(parsed.getTime()) ? new Date() : parsed;
+    }
+    return new Date();
+  });
   const [expenses, setExpenses] = useState<Expense[]>([]);
 
   // Load expenses from localStorage
@@ -38,17 +54,30 @@ export default function ExpensesPage() {
     }
   }, []);
 
+  // Sync state with URL params on mount and when params change
+  useEffect(() => {
+    if (viewParam && ['day', 'month', 'year'].includes(viewParam)) {
+      setViewMode(viewParam);
+    }
+    if (dateParam) {
+      const parsed = new Date(dateParam);
+      if (!isNaN(parsed.getTime())) {
+        setCurrentDate(parsed);
+      }
+    }
+  }, [viewParam, dateParam]);
+
   const handleViewChange = (event: SelectChangeEvent) => {
-    setViewMode(event.target.value as ViewMode);
+    const newMode = event.target.value as ViewMode;
+    setViewMode(newMode);
+    const dateStr = currentDate.toISOString().split('T')[0];
+    router.push(`/expenses?view=${newMode}&date=${dateStr}`);
   };
 
   const handleDateChange = (newDate: Date) => {
     setCurrentDate(newDate);
-  };
-
-  const handleAddExpense = () => {
-    // TODO: Implement add expense dialog
-    console.log('Add expense clicked');
+    const dateStr = newDate.toISOString().split('T')[0];
+    router.push(`/expenses?view=${viewMode}&date=${dateStr}`);
   };
 
   // Filter expenses based on current date and view mode
@@ -115,8 +144,16 @@ export default function ExpensesPage() {
           </Grid>
         </Grid>
 
-        <AddExpenseFab onClick={handleAddExpense} />
+        <AddExpenseFab viewMode={viewMode} currentDate={currentDate} />
       </Container>
     </Box>
+  );
+}
+
+export default function ExpensesPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <ExpensesPageContent />
+    </Suspense>
   );
 }

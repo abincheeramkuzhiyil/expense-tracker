@@ -1,13 +1,23 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
 import { Fab } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
+import { ViewMode } from '@/types/expense.types';
 
 interface AddExpenseFabProps {
-  onClick: () => void;
+  viewMode: ViewMode;
+  currentDate: Date;
 }
 
-export default function AddExpenseFab({ onClick }: AddExpenseFabProps) {
+export default function AddExpenseFab({ viewMode, currentDate }: AddExpenseFabProps) {
+  const router = useRouter();
+
+  const handleAddExpense = () => {
+    const dateStr = currentDate.toISOString().split('T')[0];
+    router.push(`/expenses/add?view=${viewMode}&date=${dateStr}`);
+  };
+
   return (
     <Fab
       color="primary"
@@ -17,7 +27,7 @@ export default function AddExpenseFab({ onClick }: AddExpenseFabProps) {
         bottom: 16,
         right: 16,
       }}
-      onClick={onClick}
+      onClick={handleAddExpense}
     >
       <AddIcon />
     </Fab>
