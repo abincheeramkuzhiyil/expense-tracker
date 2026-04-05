@@ -14,6 +14,7 @@ import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import AddExpenseForm, { ExpenseFormData } from '@/components/expense/AddExpenseForm';
 import { ViewMode } from '@/types/expense.types';
 import { addNewCategory, getCategories } from '@/utils/expenseCategories';
+import { saveExpense } from '@/utils/expenseStorage';
 
 function AddExpensePageContent() {
   const router = useRouter();
@@ -72,8 +73,7 @@ function AddExpensePageContent() {
       addNewCategory(formData.category);
     }
 
-    // TODO: Add expense data persistence (not implemented yet)
-    console.log('Expense data to save:', formData);
+    saveExpense(formData);
 
     // Navigate back to expenses page
     handleBack();

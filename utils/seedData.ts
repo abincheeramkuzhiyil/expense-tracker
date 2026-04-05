@@ -6,6 +6,11 @@
  */
 
 import { Expense } from '@/types/expense.types';
+import {
+  seedExpenseToStorage,
+  clearAllExpenseData,
+  getTotalExpenseCount,
+} from '@/utils/expenseStorage';
 
 export const sampleExpenses: Expense[] = [
   {
@@ -61,12 +66,12 @@ export const sampleExpenses: Expense[] = [
 ];
 
 /**
- * Seeds the localStorage with sample expense data
- * Warning: This will overwrite existing expense data
+ * Seeds the localStorage with sample expense data using the year/month structure.
+ * Warning: Does not clear existing data — call clearExpenses() first if needed.
  */
 export const seedExpenses = (): void => {
   try {
-    localStorage.setItem('expenses', JSON.stringify(sampleExpenses));
+    sampleExpenses.forEach(seedExpenseToStorage);
     console.log('✅ Sample expenses seeded successfully!');
     console.log(`📊 Added ${sampleExpenses.length} sample expenses`);
   } catch (error) {
@@ -79,7 +84,7 @@ export const seedExpenses = (): void => {
  */
 export const clearExpenses = (): void => {
   try {
-    localStorage.removeItem('expenses');
+    clearAllExpenseData();
     console.log('🗑️ All expenses cleared from storage');
   } catch (error) {
     console.error('❌ Error clearing expenses:', error);
@@ -90,15 +95,7 @@ export const clearExpenses = (): void => {
  * Gets the current number of expenses in storage
  */
 export const getExpenseCount = (): number => {
-  try {
-    const stored = localStorage.getItem('expenses');
-    if (!stored) return 0;
-    const expenses = JSON.parse(stored);
-    return Array.isArray(expenses) ? expenses.length : 0;
-  } catch (error) {
-    console.error('❌ Error counting expenses:', error);
-    return 0;
-  }
+  return getTotalExpenseCount();
 };
 
 // For browser console access (development only)

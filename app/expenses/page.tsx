@@ -17,6 +17,7 @@ import DateNavigation from '@/components/expense/DateNavigation';
 import ExpenseList from '@/components/expense/ExpenseList';
 import AddExpenseFab from '@/components/expense/AddExpenseFab';
 import { Expense, ViewMode } from '@/types/expense.types';
+import { getExpensesByDay, getExpensesByMonth, getExpensesByYear } from '@/utils/expenseStorage';
 
 function ExpensesPageContent() {
   const router = useRouter();
@@ -38,21 +39,19 @@ function ExpensesPageContent() {
   });
   const [expenses, setExpenses] = useState<Expense[]>([]);
 
-  // Load expenses from localStorage
+  // Load expenses for the current view mode and date
   useEffect(() => {
-    const storedExpenses = localStorage.getItem('expenses');
-    if (storedExpenses) {
-      const parsed = JSON.parse(storedExpenses);
-      setExpenses(
-        parsed.map((exp: any) => ({
-          ...exp,
-          date: new Date(exp.date),
-          createdAt: new Date(exp.createdAt),
-          updatedAt: new Date(exp.updatedAt),
-        }))
-      );
+    if (typeof window === 'undefined') return;
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth() + 1;
+    if (viewMode === 'day') {
+      setExpenses(getExpensesByDay(currentDate));
+    } else if (viewMode === 'month') {
+      setExpenses(getExpensesByMonth(year, month));
+    } else {
+      setExpenses(getExpensesByYear(year));
     }
-  }, []);
+  }, [viewMode, currentDate]);
 
   // Sync state with URL params on mount and when params change
   useEffect(() => {
@@ -80,22 +79,7 @@ function ExpensesPageContent() {
     router.push(`/expenses?view=${viewMode}&date=${dateStr}`);
   };
 
-  // Filter expenses based on current date and view mode
-  const filteredExpenses = expenses.filter((expense: Expense) => {
-    const expenseDate = new Date(expense.date);
-    if (viewMode === 'day') {
-      return expenseDate.toDateString() === currentDate.toDateString();
-    } else if (viewMode === 'month') {
-      return (
-        expenseDate.getMonth() === currentDate.getMonth() &&
-        expenseDate.getFullYear() === currentDate.getFullYear()
-      );
-    } else {
-      return expenseDate.getFullYear() === currentDate.getFullYear();
-    }
-  });
-
-  const total = filteredExpenses.reduce((sum: number, exp: Expense) => sum + exp.amount, 0);
+  const total = expenses.reduce((sum: number, exp: Expense) => sum + exp.amount, 0);
 
   return (
     <Box sx={{ marginY: '0.5rem' }}>
@@ -135,7 +119,7 @@ function ExpensesPageContent() {
               />
               <br />
               <ExpenseList
-                expenses={filteredExpenses}
+                expenses={expenses}
                 total={total}
                 onEdit={(id) => console.log('Edit:', id)}
                 onDelete={(id) => console.log('Delete:', id)}

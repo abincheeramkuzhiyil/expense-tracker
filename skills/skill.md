@@ -27,6 +27,7 @@ A comprehensive expense management application that enables users to track, cate
 - **PWA Configuration**: Manifest file and next-pwa setup
 - **Data Structure**: TypeScript interfaces for Expense model
 - **Responsive Design**: Mobile-first design using MUI Grid system
+- **E2E Testing**: Comprehensive Playwright test suite with Page Object Model pattern
 
 #### Pending Features (Next Iterations)
 - Add/Edit expense dialog and functionality
@@ -171,6 +172,20 @@ interface Expense {
 - Test PWA installation and offline functionality
 - Validate SMS parsing accuracy
 
+#### E2E Testing (Implemented)
+- **Framework**: Playwright with TypeScript
+- **Test Structure**: Page Object Model (POM) pattern for maintainability
+- **Coverage**: Navigation, expense viewing/filtering, add expense workflow, form validation, localStorage persistence, responsive design
+- **Fixtures**: Custom fixtures for localStorage seeding and cleanup
+- **Browsers**: Chromium only (configurable for Firefox/WebKit)
+- **CI Ready**: Automated test runs with retry logic and failure artifacts
+- **Documentation**: Comprehensive test documentation in `e2e/README.md`
+- **Commands**: 
+  - `npm run test:e2e` - Run all tests
+  - `npm run test:e2e:ui` - Interactive UI mode
+  - `npm run test:e2e:debug` - Debug mode
+  - `npm run test:e2e:report` - View HTML report
+
 ### API & Data Handling
 - Validate all user inputs
 - Sanitize data before storage
@@ -205,8 +220,10 @@ interface Expense {
 ### Technical Debt & Improvements
 - Migration path from LocalStorage to File System
 - Implement comprehensive test coverage
-- Add end-to-end testing
+- ✅ Add end-to-end testing (Completed - Playwright implementation)
 - Performance monitoring and analytics
+- Add unit tests for utility functions and components
+- Expand E2E test coverage to Firefox and WebKit browsers
 
 ## Resources & References
 
