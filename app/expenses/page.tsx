@@ -15,6 +15,8 @@ import {
 } from '@mui/material';
 import DateNavigation from '@/components/expense/DateNavigation';
 import ExpenseList from '@/components/expense/ExpenseList';
+import MonthDayTable from '@/components/expense/MonthDayTable';
+import YearSummaryTable from '@/components/expense/YearSummaryTable';
 import AddExpenseFab from '@/components/expense/AddExpenseFab';
 import { Expense, ViewMode } from '@/types/expense.types';
 import { getExpensesByDay, getExpensesByMonth, getExpensesByYear } from '@/utils/expenseStorage';
@@ -118,12 +120,27 @@ function ExpensesPageContent() {
                 total={total}
               />
               <br />
-              <ExpenseList
-                expenses={expenses}
-                total={total}
-                onEdit={(id) => console.log('Edit:', id)}
-                onDelete={(id) => console.log('Delete:', id)}
-              />
+              {viewMode === 'day' && (
+                <ExpenseList
+                  expenses={expenses}
+                  total={total}
+                  onEdit={(id) => console.log('Edit:', id)}
+                  onDelete={(id) => console.log('Delete:', id)}
+                />
+              )}
+              {viewMode === 'month' && (
+                <MonthDayTable
+                  year={currentDate.getFullYear()}
+                  month={currentDate.getMonth() + 1}
+                  expenses={expenses}
+                />
+              )}
+              {viewMode === 'year' && (
+                <YearSummaryTable
+                  year={currentDate.getFullYear()}
+                  expenses={expenses}
+                />
+              )}
             </Box>
           </Grid>
         </Grid>
