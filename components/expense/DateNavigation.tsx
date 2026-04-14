@@ -79,17 +79,18 @@ export default function DateNavigation({
 
   return (
     <Paper elevation={1} sx={{ position: 'sticky', top: 0, zIndex: 1 }}>
-      <Grid container alignItems="center" justifyContent="space-between" sx={{ p: 1 }}>
+      <Grid container alignItems="center" justifyContent="space-between" sx={{ py: 1.5, px: 1 }}>
         <Grid item>
           <IconButton onClick={handlePrevious}>
-            <KeyboardArrowLeftIcon />
+            <KeyboardArrowLeftIcon sx={{ fontSize: '2rem' }} />
           </IconButton>
         </Grid>
         <Grid item>
           <Box sx={{ textAlign: 'center' }}>
-            <Typography variant="body1">{formatDate(currentDate)}</Typography>
+            <Typography variant="body1" sx={{ fontWeight: 'bold' }}>{formatDate(currentDate)}</Typography>
             <Typography variant="caption">
-              <b>Total:</b> ₹{total.toFixed(2)}
+              <span style={{ fontWeight: 'bold' }}>Total:</span>{' '}
+              <span style={{ fontWeight: 'bold' }}>₹{total.toFixed(2)}</span>
             </Typography>
           </Box>
         </Grid>
@@ -97,12 +98,12 @@ export default function DateNavigation({
           <Grid container>
             <Grid item>
               <IconButton onClick={handleNext}>
-                <KeyboardArrowRightIcon />
+                <KeyboardArrowRightIcon sx={{ fontSize: '2rem' }} />
               </IconButton>
             </Grid>
             <Grid item>
               <IconButton onClick={handleToday} disabled={isToday()}>
-                <TodayIcon />
+                <TodayIcon sx={{ fontSize: '2rem' }} />
               </IconButton>
             </Grid>
           </Grid>

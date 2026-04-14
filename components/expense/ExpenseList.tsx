@@ -32,8 +32,8 @@ export default function ExpenseList({
       {/* Header */}
       <Accordion sx={{ pointerEvents: 'none' }}>
         <AccordionSummary>
-          <Typography sx={{ flexGrow: 1 }}>Spent on</Typography>
-          <Typography>
+          <Typography sx={{ flexGrow: 1, fontWeight: 'bold' }}>Spent on</Typography>
+          <Typography sx={{ fontWeight: 'bold' }}>
             Amount <span style={{ color: '#777', fontWeight: 400 }}>(Rs.)</span>
           </Typography>
         </AccordionSummary>
@@ -77,9 +77,9 @@ export default function ExpenseList({
 
       {/* Footer - Total */}
       <Accordion sx={{ pointerEvents: 'none', position: 'sticky', bottom: 0 }}>
-        <AccordionSummary>
-          <Typography sx={{ flexGrow: 1 }}>Total</Typography>
-          <Typography>{total.toFixed(2)}</Typography>
+        <AccordionSummary sx={{ pr: '75px' }}>
+          <Typography sx={{ flexGrow: 1, fontWeight: 'bold' }}>Total</Typography>
+          <Typography sx={{ fontWeight: 'bold' }}>{total.toFixed(2)}</Typography>
         </AccordionSummary>
       </Accordion>
     </>

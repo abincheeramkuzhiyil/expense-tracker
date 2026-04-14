@@ -44,8 +44,8 @@ export default function YearSummaryTable({ year, expenses }: YearSummaryTablePro
       {/* Header */}
       <Accordion sx={{ pointerEvents: 'none' }}>
         <AccordionSummary>
-          <Typography sx={{ flexGrow: 1 }}>Month</Typography>
-          <Typography>
+          <Typography sx={{ flexGrow: 1, fontWeight: 'bold' }}>Month</Typography>
+          <Typography sx={{ fontWeight: 'bold' }}>
             Amount <span style={{ color: '#777', fontWeight: 400 }}>(Rs.)</span>
           </Typography>
         </AccordionSummary>
@@ -104,9 +104,9 @@ export default function YearSummaryTable({ year, expenses }: YearSummaryTablePro
 
       {/* Footer */}
       <Accordion sx={{ pointerEvents: 'none', position: 'sticky', bottom: 0 }}>
-        <AccordionSummary>
-          <Typography sx={{ flexGrow: 1 }}>Total</Typography>
-          <Typography>{total.toFixed(2)}</Typography>
+        <AccordionSummary sx={{ pr: '80px' }}>
+          <Typography sx={{ flexGrow: 1, fontWeight: 'bold' }}>Total</Typography>
+          <Typography sx={{ fontWeight: 'bold' }}>{total.toFixed(2)}</Typography>
         </AccordionSummary>
       </Accordion>
 
