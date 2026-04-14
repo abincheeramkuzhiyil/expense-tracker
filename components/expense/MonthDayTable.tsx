@@ -11,6 +11,7 @@ import {
   TableCell,
   TableContainer,
   IconButton,
+  Paper,
 } from '@mui/material';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import { Expense } from '@/types/expense.types';
@@ -52,7 +53,7 @@ export default function MonthDayTable({ year, month, expenses }: MonthDayTablePr
         </AccordionSummary>
       </Accordion>
 
-      <TableContainer>
+      <TableContainer component={Paper} elevation={0}>
         <Table>
           <TableBody>
             {days.map((day) => {
@@ -108,7 +109,7 @@ export default function MonthDayTable({ year, month, expenses }: MonthDayTablePr
       </TableContainer>
 
       {/* Footer */}
-      <Accordion sx={{ pointerEvents: 'none' }}>
+      <Accordion sx={{ pointerEvents: 'none', position: 'sticky', bottom: 0 }}>
         <AccordionSummary>
           <Typography sx={{ flexGrow: 1 }}>Total</Typography>
           <Typography>{total.toFixed(2)}</Typography>

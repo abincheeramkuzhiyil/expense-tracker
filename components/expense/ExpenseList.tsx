@@ -76,7 +76,7 @@ export default function ExpenseList({
       ))}
 
       {/* Footer - Total */}
-      <Accordion sx={{ pointerEvents: 'none' }}>
+      <Accordion sx={{ pointerEvents: 'none', position: 'sticky', bottom: 0 }}>
         <AccordionSummary>
           <Typography sx={{ flexGrow: 1 }}>Total</Typography>
           <Typography>{total.toFixed(2)}</Typography>

@@ -78,7 +78,7 @@ export default function DateNavigation({
   };
 
   return (
-    <Paper elevation={1}>
+    <Paper elevation={1} sx={{ position: 'sticky', top: 0, zIndex: 1 }}>
       <Grid container alignItems="center" justifyContent="space-between" sx={{ p: 1 }}>
         <Grid item>
           <IconButton onClick={handlePrevious}>
