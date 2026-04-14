@@ -8,7 +8,13 @@ const withPWA = require('next-pwa')({
 
 const nextConfig = {
   reactStrictMode: true,
-  turbopack: {}
+  turbopack: {},
+  output: 'export',
+  basePath: '/expense-tracker',
+  assetPrefix: '/expense-tracker/',
+  images: {
+    unoptimized: true,
+  },
 };
 
 module.exports = withPWA(nextConfig);
