@@ -81,7 +81,7 @@ function AddExpensePageContent() {
 
   return (
     <Box>
-      <AppBar position="static" elevation={1}>
+      <AppBar position="static" color="default" elevation={1}>
         <Toolbar>
           <IconButton
             edge="start"
@@ -99,12 +99,14 @@ function AddExpensePageContent() {
       </AppBar>
 
       <Container maxWidth="md" sx={{ mt: 3 }}>
-        <AddExpenseForm
-          defaultDate={defaultDate}
-          viewMode={viewMode}
-          onSave={handleSave}
-          onCancel={handleCancel}
-        />
+        <Box sx={{ p: 2, mb: 2, bgcolor: 'grey.200' }}>
+          <AddExpenseForm
+            defaultDate={defaultDate}
+            viewMode={viewMode}
+            onSave={handleSave}
+            onCancel={handleCancel}
+          />
+        </Box>
       </Container>
     </Box>
   );
