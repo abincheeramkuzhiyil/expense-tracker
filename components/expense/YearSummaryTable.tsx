@@ -104,7 +104,7 @@ export default function YearSummaryTable({ year, expenses }: YearSummaryTablePro
 
       {/* Footer */}
       <Accordion sx={{ pointerEvents: 'none', position: 'sticky', bottom: 0 }}>
-        <AccordionSummary sx={{ pr: '80px' }}>
+        <AccordionSummary sx={{ pr: '75px' }}>
           <Typography sx={{ flexGrow: 1, fontWeight: 'bold' }}>Total</Typography>
           <Typography sx={{ fontWeight: 'bold' }}>{total.toFixed(2)}</Typography>
         </AccordionSummary>

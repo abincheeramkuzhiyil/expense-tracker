@@ -1,5 +1,6 @@
 import { Expense, StoredExpense, StoredYear } from '@/types/expense.types';
 import { ExpenseFormData } from '@/components/expense/AddExpenseForm';
+import { v4 as uuidv4 } from 'uuid';
 
 const YEAR_INDEX_KEY = 'expenseYearIndex';
 
@@ -64,7 +65,7 @@ export function saveExpense(formData: ExpenseFormData): Expense {
   const monthKey = String(monthNum);
 
   const stored: StoredExpense = {
-    id: crypto.randomUUID(),
+    id: uuidv4(),
     amount: formData.amount,
     category: formData.category.trim(),
     date: formData.date,
