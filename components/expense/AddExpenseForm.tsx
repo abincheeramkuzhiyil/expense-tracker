@@ -33,7 +33,7 @@ export default function AddExpenseForm({
   onSave,
   onCancel,
 }: AddExpenseFormProps) {
-  const [categories, setCategories] = useState<string[]>([]);
+  const [categories, setCategories] = useState<string[]>(() => getCategories());
   const [formData, setFormData] = useState<ExpenseFormData>({
     date: formatDateForInput(defaultDate),
     category: '',
@@ -46,10 +46,6 @@ export default function AddExpenseForm({
     amount?: string;
   }>({});
   const [isNewCategory, setIsNewCategory] = useState(false);
-
-  useEffect(() => {
-    setCategories(getCategories());
-  }, []);
 
   // Check if the entered category is new
   useEffect(() => {
