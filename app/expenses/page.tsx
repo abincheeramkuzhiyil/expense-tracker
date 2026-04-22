@@ -1,9 +1,12 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect, useRef, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
+  Alert,
+  Badge,
   Box,
+  Button,
   Container,
   Grid,
   Typography,
@@ -18,16 +21,22 @@ import ExpenseList from '@/components/expense/ExpenseList';
 import MonthDayTable from '@/components/expense/MonthDayTable';
 import YearSummaryTable from '@/components/expense/YearSummaryTable';
 import AddExpenseFab from '@/components/expense/AddExpenseFab';
+import PendingExpenseReview from '@/components/expense/PendingExpenseReview';
 import { Expense, ViewMode } from '@/types/expense.types';
 import { getExpensesByDay, getExpensesByMonth, getExpensesByYear } from '@/utils/expenseStorage';
+import { usePendingExpenses } from '@/hooks/usePendingExpenses';
 
 function ExpensesPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { pending } = usePendingExpenses();
+  const [reviewOpen, setReviewOpen] = useState(false);
+  const [bannerDismissed, setBannerDismissed] = useState(false);
 
   // Initialize from URL search params or defaults
   const viewParam = searchParams.get('view') as ViewMode | null;
   const dateParam = searchParams.get('date');
+  const reviewParam = searchParams.get('review');
 
   const [viewMode, setViewMode] = useState<ViewMode>(
     viewParam && ['day', 'month', 'year'].includes(viewParam) ? viewParam : 'day'
@@ -68,6 +77,22 @@ function ExpensesPageContent() {
     }
   }, [viewParam, dateParam]);
 
+  // Auto-open the review modal when navigated from a notification (?review=1)
+  useEffect(() => {
+    if (reviewParam === '1') {
+      setReviewOpen(true);
+    }
+  }, [reviewParam]);
+
+  // Re-show the banner whenever new pending items arrive after the user dismissed it.
+  const previousCount = useRef(pending.length);
+  useEffect(() => {
+    if (pending.length > previousCount.current) {
+      setBannerDismissed(false);
+    }
+    previousCount.current = pending.length;
+  }, [pending.length]);
+
   const handleViewChange = (event: SelectChangeEvent) => {
     const newMode = event.target.value as ViewMode;
     setViewMode(newMode);
@@ -86,6 +111,32 @@ function ExpensesPageContent() {
   return (
     <Box sx={{ marginY: '0.5rem' }}>
       <Container maxWidth="lg">
+        {/* Pending review banner */}
+        {pending.length > 0 && !bannerDismissed && (
+          <Alert
+            severity="info"
+            sx={{ mb: 2 }}
+            icon={<Badge badgeContent={pending.length} color="primary" />}
+            action={
+              <>
+                <Button color="inherit" size="small" onClick={() => setReviewOpen(true)}>
+                  Review
+                </Button>
+                <Button
+                  color="inherit"
+                  size="small"
+                  onClick={() => setBannerDismissed(true)}
+                  aria-label="Dismiss banner"
+                >
+                  ✕
+                </Button>
+              </>
+            }
+          >
+            You have {pending.length} expense{pending.length === 1 ? '' : 's'} to review from SMS
+          </Alert>
+        )}
+
         <Grid container spacing={2}>
           <Grid item xs={6} md={3}>
             <Typography variant="h5" component="h2" sx={{ fontWeight: 'bold', marginTop: '0.8rem' }}>
@@ -147,6 +198,8 @@ function ExpensesPageContent() {
 
         <AddExpenseFab viewMode={viewMode} currentDate={currentDate} />
       </Container>
+
+      <PendingExpenseReview open={reviewOpen} onClose={() => setReviewOpen(false)} />
     </Box>
   );
 }

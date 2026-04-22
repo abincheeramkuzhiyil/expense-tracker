@@ -1,4 +1,4 @@
-import { Expense, StoredExpense, StoredYear } from '@/types/expense.types';
+import { Expense, ExpenseSource, ExpenseStatus, StoredExpense, StoredYear } from '@/types/expense.types';
 import { ExpenseFormData } from '@/components/expense/AddExpenseForm';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -7,11 +7,28 @@ const YEAR_INDEX_KEY = 'expenseYearIndex';
 // Module-level cache: avoids repeated JSON.parse for the same year
 const yearCache = new Map<number, StoredYear>();
 
+// ─── Change-notification (for React hooks to stay in sync) ────────────────────
+
+type Listener = () => void;
+const listeners = new Set<Listener>();
+
+/** Subscribe to expense storage changes. Returns an unsubscribe function. */
+export function subscribeToExpenseChanges(listener: Listener): () => void {
+  listeners.add(listener);
+  return () => listeners.delete(listener);
+}
+
+function notifyChange(): void {
+  listeners.forEach((l) => l());
+}
+
 // ─── Private helpers ──────────────────────────────────────────────────────────
 
 function storedToExpense(stored: StoredExpense): Expense {
   return {
     ...stored,
+    // Backward compat: missing status = 'approved'
+    status: stored.status ?? 'approved',
     date: new Date(stored.date),
     createdAt: new Date(stored.createdAt),
     updatedAt: new Date(stored.updatedAt),
@@ -57,8 +74,16 @@ function addYearToIndex(yearStr: string): void {
 /**
  * Saves a new expense from form data.
  * Generates a UUID and timestamps automatically.
+ *
+ * @param formData Form values from AddExpenseForm.
+ * @param source   'manual' (default) or 'sms'.
+ * @param status   'approved' (default) or 'pending'. Pending expenses are awaiting user review.
  */
-export function saveExpense(formData: ExpenseFormData): Expense {
+export function saveExpense(
+  formData: ExpenseFormData,
+  source: ExpenseSource = 'manual',
+  status: ExpenseStatus = 'approved'
+): Expense {
   const now = new Date().toISOString();
   // Parse year/month from "YYYY-MM-DD" directly to avoid timezone shifting
   const [yearNum, monthNum] = formData.date.split('-').map(Number);
@@ -70,7 +95,8 @@ export function saveExpense(formData: ExpenseFormData): Expense {
     category: formData.category.trim(),
     date: formData.date,
     description: formData.description,
-    source: 'manual',
+    source,
+    status,
     createdAt: now,
     updatedAt: now,
   };
@@ -83,10 +109,11 @@ export function saveExpense(formData: ExpenseFormData): Expense {
   saveYearData(yearNum, yearData);
   addYearToIndex(String(yearNum));
 
+  notifyChange();
   return storedToExpense(stored);
 }
 
-/** Returns expenses for a specific day. */
+/** Returns approved expenses for a specific day. Pending expenses are excluded. */
 export function getExpensesByDay(date: Date): Expense[] {
   if (typeof window === 'undefined') return [];
   try {
@@ -97,32 +124,143 @@ export function getExpensesByDay(date: Date): Expense[] {
     const yearData = getYearData(year);
     return (yearData[monthKey] ?? [])
       .filter((e) => e.date === dateStr)
-      .map(storedToExpense);
+      .map(storedToExpense)
+      .filter((e) => e.status === 'approved');
   } catch {
     return [];
   }
 }
 
-/** Returns all expenses for a given month. month is 1–12. */
+/** Returns approved expenses for a given month. month is 1–12. Pending expenses are excluded. */
 export function getExpensesByMonth(year: number, month: number): Expense[] {
   if (typeof window === 'undefined') return [];
   try {
     const yearData = getYearData(year);
-    return (yearData[String(month)] ?? []).map(storedToExpense);
+    return (yearData[String(month)] ?? [])
+      .map(storedToExpense)
+      .filter((e) => e.status === 'approved');
   } catch {
     return [];
   }
 }
 
-/** Returns all expenses for a given year. */
+/** Returns approved expenses for a given year. Pending expenses are excluded. */
 export function getExpensesByYear(year: number): Expense[] {
   if (typeof window === 'undefined') return [];
   try {
     const yearData = getYearData(year);
-    return Object.values(yearData).flat().map(storedToExpense);
+    return Object.values(yearData)
+      .flat()
+      .map(storedToExpense)
+      .filter((e) => e.status === 'approved');
   } catch {
     return [];
   }
+}
+
+// ─── Pending review API ───────────────────────────────────────────────────────
+
+/** Returns all expenses across all years that are awaiting user review. */
+export function getPendingExpenses(): Expense[] {
+  if (typeof window === 'undefined') return [];
+  try {
+    const raw = localStorage.getItem(YEAR_INDEX_KEY);
+    if (!raw) return [];
+    const years = JSON.parse(raw) as string[];
+    const out: Expense[] = [];
+    for (const yearStr of years) {
+      const yearData = getYearData(Number(yearStr));
+      for (const monthExpenses of Object.values(yearData)) {
+        for (const stored of monthExpenses) {
+          const expense = storedToExpense(stored);
+          if (expense.status === 'pending') out.push(expense);
+        }
+      }
+    }
+    return out.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+  } catch {
+    return [];
+  }
+}
+
+/** Marks a pending expense as approved so it appears in the regular lists. */
+export function approveExpense(id: string): void {
+  if (typeof window === 'undefined') return;
+  if (!updateStoredExpense(id, (s) => ({ ...s, status: 'approved', updatedAt: new Date().toISOString() }))) return;
+  notifyChange();
+}
+
+/** Permanently deletes a pending expense from storage. */
+export function rejectExpense(id: string): void {
+  if (typeof window === 'undefined') return;
+  if (!deleteStoredExpense(id)) return;
+  notifyChange();
+}
+
+/** Approves every currently-pending expense in a single batch. */
+export function approveAllPending(): number {
+  if (typeof window === 'undefined') return 0;
+  const pending = getPendingExpenses();
+  if (pending.length === 0) return 0;
+  const now = new Date().toISOString();
+  for (const expense of pending) {
+    updateStoredExpense(expense.id, (s) => ({ ...s, status: 'approved', updatedAt: now }));
+  }
+  notifyChange();
+  return pending.length;
+}
+
+/** Internal: locate and mutate a stored expense by id. Returns true if found. */
+function updateStoredExpense(
+  id: string,
+  mutate: (stored: StoredExpense) => StoredExpense
+): boolean {
+  const raw = localStorage.getItem(YEAR_INDEX_KEY);
+  if (!raw) return false;
+  try {
+    const years = JSON.parse(raw) as string[];
+    for (const yearStr of years) {
+      const year = Number(yearStr);
+      const yearData = getYearData(year);
+      for (const [monthKey, monthExpenses] of Object.entries(yearData)) {
+        const idx = monthExpenses.findIndex((e) => e.id === id);
+        if (idx !== -1) {
+          monthExpenses[idx] = mutate(monthExpenses[idx]);
+          yearData[monthKey] = monthExpenses;
+          saveYearData(year, yearData);
+          return true;
+        }
+      }
+    }
+  } catch {
+    return false;
+  }
+  return false;
+}
+
+/** Internal: locate and remove a stored expense by id. Returns true if found. */
+function deleteStoredExpense(id: string): boolean {
+  const raw = localStorage.getItem(YEAR_INDEX_KEY);
+  if (!raw) return false;
+  try {
+    const years = JSON.parse(raw) as string[];
+    for (const yearStr of years) {
+      const year = Number(yearStr);
+      const yearData = getYearData(year);
+      for (const [monthKey, monthExpenses] of Object.entries(yearData)) {
+        const idx = monthExpenses.findIndex((e) => e.id === id);
+        if (idx !== -1) {
+          monthExpenses.splice(idx, 1);
+          yearData[monthKey] = monthExpenses;
+          saveYearData(year, yearData);
+          return true;
+        }
+      }
+    }
+  } catch {
+    return false;
+  }
+  return false;
 }
 
 /** Returns the list of years that have expense data. */
@@ -187,6 +325,7 @@ export function seedExpenseToStorage(expense: Expense): void {
     date: dateStr,
     description: expense.description,
     source: expense.source,
+    status: expense.status,
     createdAt: expense.createdAt.toISOString(),
     updatedAt: expense.updatedAt.toISOString(),
   };

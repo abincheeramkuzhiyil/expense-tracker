@@ -9,8 +9,10 @@ import {
   Button,
   Alert,
   Grid,
+  Chip,
 } from '@mui/material';
-import { ViewMode } from '@/types/expense.types';
+import SmsIcon from '@mui/icons-material/Sms';
+import { ExpenseSource, ViewMode } from '@/types/expense.types';
 import { getCategories } from '@/utils/expenseCategories';
 
 interface AddExpenseFormProps {
@@ -18,6 +20,12 @@ interface AddExpenseFormProps {
   viewMode: ViewMode;
   onSave: (formData: ExpenseFormData) => void;
   onCancel: () => void;
+  /** Pre-fill values (e.g. from an SMS share). */
+  initialValues?: Partial<ExpenseFormData>;
+  /** Visual indicator that the form was populated from an SMS. */
+  source?: ExpenseSource;
+  /** Override the default Save button label. */
+  saveLabel?: string;
 }
 
 export interface ExpenseFormData {
@@ -32,13 +40,16 @@ export default function AddExpenseForm({
   viewMode,
   onSave,
   onCancel,
+  initialValues,
+  source = 'manual',
+  saveLabel = 'Save',
 }: AddExpenseFormProps) {
   const [categories, setCategories] = useState<string[]>(() => getCategories());
   const [formData, setFormData] = useState<ExpenseFormData>({
-    date: formatDateForInput(defaultDate),
-    category: '',
-    amount: 0,
-    description: '',
+    date: initialValues?.date ?? formatDateForInput(defaultDate),
+    category: initialValues?.category ?? '',
+    amount: initialValues?.amount ?? 0,
+    description: initialValues?.description ?? '',
   });
   const [errors, setErrors] = useState<{
     date?: string;
@@ -116,6 +127,18 @@ export default function AddExpenseForm({
     <Paper elevation={2} sx={{ padding: 3 }}>
       <form onSubmit={handleSubmit}>
         <Grid container spacing={3}>
+          {source === 'sms' && (
+            <Grid item xs={12}>
+              <Chip
+                icon={<SmsIcon />}
+                label="Parsed from SMS"
+                color="info"
+                size="small"
+                aria-label="This expense was parsed from an SMS message"
+              />
+            </Grid>
+          )}
+
           {dateNote && (
             <Grid item xs={12}>
               <Alert severity="info">Note: {dateNote}</Alert>
@@ -180,6 +203,8 @@ export default function AddExpenseForm({
               inputProps={{
                 step: 0.01,
                 min: 0,
+                inputMode: 'decimal',
+                'aria-label': 'Expense amount',
               }}
             />
           </Grid>
@@ -202,7 +227,7 @@ export default function AddExpenseForm({
                 Cancel
               </Button>
               <Button variant="contained" type="submit">
-                Save
+                {saveLabel}
               </Button>
             </Box>
           </Grid>

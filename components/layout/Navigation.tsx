@@ -12,11 +12,13 @@ import {
   ListItemIcon,
   ListItemText,
   Toolbar,
+  Tooltip,
   Typography,
 } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
 import HomeIcon from '@mui/icons-material/Home';
 import ReceiptIcon from '@mui/icons-material/Receipt';
+import SettingsIcon from '@mui/icons-material/Settings';
 import { usePathname, useRouter } from 'next/navigation';
 
 const drawerWidth = 240;
@@ -24,6 +26,7 @@ const drawerWidth = 240;
 const menuItems = [
   { text: 'Home', icon: <HomeIcon />, path: '/' },
   { text: 'Expenses', icon: <ReceiptIcon />, path: '/expenses' },
+  { text: 'Settings', icon: <SettingsIcon />, path: '/settings' },
 ];
 
 export default function Navigation() {
@@ -77,6 +80,20 @@ export default function Navigation() {
           <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
             Expense Tracker
           </Typography>
+          <Tooltip title="Settings">
+            <IconButton
+              color="inherit"
+              aria-label="Open settings"
+              edge="end"
+              onClick={() => router.push('/settings')}
+              sx={{
+                // Visually mark the icon as active when on a settings route
+                opacity: pathname?.startsWith('/settings') ? 1 : 0.85,
+              }}
+            >
+              <SettingsIcon />
+            </IconButton>
+          </Tooltip>
         </Toolbar>
       </AppBar>
       <Drawer

@@ -64,5 +64,13 @@
         }
       ]
     }
-  ]
+  ],
+  "share_target": {
+    "action": "/expense-tracker/expenses/add",
+    "method": "GET",
+    "params": {
+      "text": "shared_text",
+      "title": "shared_title"
+    }
+  }
 }
