@@ -22,7 +22,7 @@ export default function ThemeSettingsPage() {
           <IconButton
             edge="start"
             color="inherit"
-            onClick={() => router.push('/settings')}
+            onClick={() => router.back()}
             aria-label="Back to settings"
             sx={{ mr: 2 }}
           >
