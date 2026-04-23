@@ -34,7 +34,7 @@ export default function SmsParserSettingsPage() {
         </Toolbar>
       </AppBar>
 
-      <Container maxWidth="sm" sx={{ py: 3 }}>
+      <Container maxWidth="lg" sx={{ py: 3 }}>
         <SmsParserSettings />
       </Container>
     </Box>

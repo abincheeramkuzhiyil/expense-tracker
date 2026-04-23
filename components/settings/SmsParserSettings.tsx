@@ -14,15 +14,13 @@ import {
   DialogContent,
   DialogContentText,
   DialogTitle,
-  FormControl,
+  Divider,
   Grid,
   IconButton,
-  InputLabel,
-  MenuItem,
-  Select,
   Skeleton,
   Snackbar,
   Stack,
+  SwipeableDrawer,
   TextField,
   Tooltip,
   Typography,
@@ -33,13 +31,14 @@ import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import CancelIcon from '@mui/icons-material/Cancel';
+import ScienceIcon from '@mui/icons-material/Science';
+import CloseIcon from '@mui/icons-material/Close';
 import SettingsBackupRestoreIcon from '@mui/icons-material/SettingsBackupRestore';
 import { v4 as uuidv4 } from 'uuid';
 import { ParsedSmsResult, SmsParserRule } from '@/types/expense.types';
 import { useSettings } from '@/hooks/useSettings';
 import { testParserRule } from '@/utils/smsParser';
+import TestPanelContent from './SmsParserTestPanel';
 
 const SAMPLE_SMS =
   'Dear Customer, INR 1,250.00 debited from A/c XX1234 on 21-Apr-26 to AMAZON. Avl Bal: INR 45,320.00. -HDFC Bank';
@@ -72,6 +71,7 @@ interface SnackbarState {
 export default function SmsParserSettings() {
   const theme = useTheme();
   const fullScreen = useMediaQuery(theme.breakpoints.down('sm'));
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const { settings, updateSettings, isLoaded } = useSettings();
 
   const [editorOpen, setEditorOpen] = useState(false);
@@ -85,6 +85,7 @@ export default function SmsParserSettings() {
   // Test panel state
   const [testText, setTestText] = useState(SAMPLE_SMS);
   const [testRuleId, setTestRuleId] = useState<string>('');
+  const [testDrawerOpen, setTestDrawerOpen] = useState(false);
 
   const selectedTestRule = useMemo(() => {
     if (!testRuleId) return settings.parserRules[0];
@@ -216,8 +217,9 @@ export default function SmsParserSettings() {
 
   return (
     <>
-      <Stack spacing={3}>
-        {/* Rules list */}
+      <Grid container spacing={3}>
+        {/* ── Left column: rules list ── */}
+        <Grid item xs={12} md={7}>
         <Box>
           <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1 }}>
             <Typography variant="h6">Your Rules</Typography>
@@ -276,7 +278,10 @@ export default function SmsParserSettings() {
                     <Button
                       size="small"
                       startIcon={<PlayArrowIcon />}
-                      onClick={() => setTestRuleId(rule.id)}
+                      onClick={() => {
+                        setTestRuleId(rule.id);
+                        if (isMobile) setTestDrawerOpen(true);
+                      }}
                     >
                       Test
                     </Button>
@@ -307,60 +312,96 @@ export default function SmsParserSettings() {
             })}
           </Stack>
         </Box>
+        </Grid>
 
-        {/* Test panel */}
-        <Card variant="outlined">
-          <CardContent>
-            <Typography variant="h6" gutterBottom>
-              Test a Rule
-            </Typography>
-
-            <FormControl fullWidth size="small" sx={{ mb: 2 }}>
-              <InputLabel id="test-rule-label">Rule</InputLabel>
-              <Select
-                labelId="test-rule-label"
-                label="Rule"
-                value={selectedTestRule?.id ?? ''}
-                onChange={(e) => setTestRuleId(e.target.value)}
+        {/* ── Right column: sticky test panel (desktop only) ── */}
+        <Grid item md={5} sx={{ display: { xs: 'none', md: 'block' } }}>
+          <Box sx={{ position: 'sticky', top: 24 }}>
+            <Card
+              variant="outlined"
+              sx={{ borderTop: 3, borderColor: 'primary.main', overflow: 'hidden' }}
+            >
+              {/* Tinted header strip */}
+              <Box
+                sx={{
+                  bgcolor: 'primary.main',
+                  px: 2,
+                  py: 1.5,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 1,
+                }}
               >
-                {settings.parserRules.map((rule) => (
-                  <MenuItem key={rule.id} value={rule.id}>
-                    {rule.bankName}
-                    {rule.builtIn ? ' (Built-in)' : ''}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
+                <ScienceIcon sx={{ color: 'primary.contrastText', fontSize: 20 }} />
+                <Typography variant="h6" sx={{ color: 'primary.contrastText', fontWeight: 600 }}>
+                  Test a Rule
+                </Typography>
+              </Box>
 
-            <TextField
-              label="Sample SMS"
-              fullWidth
-              multiline
-              rows={4}
-              value={testText}
-              onChange={(e) => setTestText(e.target.value)}
-              sx={{ mb: 2 }}
-              helperText='Paste a sample bank SMS to see what the selected rule extracts.'
-            />
+              <CardContent>
+                <TestPanelContent
+                  rules={settings.parserRules}
+                  selectedRuleId={selectedTestRule?.id ?? ''}
+                  onRuleChange={setTestRuleId}
+                  testText={testText}
+                  onTestTextChange={setTestText}
+                  testResult={testResult}
+                  selectedRule={selectedTestRule}
+                  selectLabelId="test-rule-label"
+                />
+              </CardContent>
+            </Card>
+          </Box>
+        </Grid>
+      </Grid>
 
-            <Box>
-              <Typography variant="subtitle2" gutterBottom>
-                Extracted:
-              </Typography>
-              <ExtractedRow
-                label="Amount"
-                value={
-                  testResult?.amount !== undefined
-                    ? `${selectedTestRule?.currency ?? ''} ${testResult.amount.toFixed(2)}`
-                    : null
-                }
-              />
-              <ExtractedRow label="Merchant" value={testResult?.description ?? null} />
-              <ExtractedRow label="Date" value={testResult?.date ?? null} />
-            </Box>
-          </CardContent>
-        </Card>
-      </Stack>
+      {/* Mobile slide-up test drawer */}
+      <SwipeableDrawer
+        anchor="bottom"
+        open={testDrawerOpen}
+        onClose={() => setTestDrawerOpen(false)}
+        onOpen={() => {}}
+        disableSwipeToOpen
+        PaperProps={{
+          sx: {
+            height: '85vh',
+            borderTopLeftRadius: 16,
+            borderTopRightRadius: 16,
+            display: 'flex',
+            flexDirection: 'column',
+          },
+        }}
+      >
+        {/* Drag handle */}
+        <Box sx={{ pt: 1.5, pb: 0.5, display: 'flex', justifyContent: 'center' }}>
+          <Box sx={{ width: 40, height: 4, bgcolor: 'grey.400', borderRadius: 2 }} />
+        </Box>
+
+        <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ px: 2, pt: 0.5, pb: 1 }}>
+          <Stack direction="row" alignItems="center" spacing={1}>
+            <ScienceIcon color="primary" fontSize="small" />
+            <Typography variant="h6">Test a Rule</Typography>
+          </Stack>
+          <IconButton size="small" aria-label="Close test panel" onClick={() => setTestDrawerOpen(false)}>
+            <CloseIcon />
+          </IconButton>
+        </Stack>
+
+        <Divider />
+
+        <Box sx={{ px: 2, pt: 2, pb: 4, overflow: 'auto', flexGrow: 1 }}>
+          <TestPanelContent
+            rules={settings.parserRules}
+            selectedRuleId={selectedTestRule?.id ?? ''}
+            onRuleChange={setTestRuleId}
+            testText={testText}
+            onTestTextChange={setTestText}
+            testResult={testResult}
+            selectedRule={selectedTestRule}
+            selectLabelId="test-rule-label-mobile"
+          />
+        </Box>
+      </SwipeableDrawer>
 
       {/* Add/Edit dialog */}
       <Dialog open={editorOpen} onClose={() => setEditorOpen(false)} fullScreen={fullScreen} fullWidth maxWidth="sm">
@@ -474,20 +515,3 @@ export default function SmsParserSettings() {
   );
 }
 
-function ExtractedRow({ label, value }: { label: string; value: string | null }) {
-  return (
-    <Stack direction="row" alignItems="center" spacing={1} sx={{ py: 0.5 }}>
-      {value ? (
-        <CheckCircleIcon color="success" fontSize="small" />
-      ) : (
-        <CancelIcon color="error" fontSize="small" />
-      )}
-      <Typography variant="body2" sx={{ minWidth: 80, color: 'text.secondary' }}>
-        {label}:
-      </Typography>
-      <Typography variant="body2">
-        {value ?? <span style={{ fontStyle: 'italic', opacity: 0.6 }}>not extracted</span>}
-      </Typography>
-    </Stack>
-  );
-}

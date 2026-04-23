@@ -1,5 +1,3 @@
-- Make the testing of SMS parser rules as a slide-in up modal. For desktop also it should be slide-up modal.
-  Currently we have to scroll down to see the test result, which is confusing in mobile view.
 - Make all the rule to execute in a loop, break the loop if any rule can find all three - Amount, Date and Merchant.
 
 - When the expense is auto populated to Add-expense page via the share target API:
