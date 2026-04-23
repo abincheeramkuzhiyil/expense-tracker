@@ -1,0 +1,26 @@
+- Make the testing of SMS parser rules as a slide-in up modal. For desktop also it should be slide-up modal.
+  Currently we have to scroll down to see the test result, which is confusing in mobile view.
+- Make all the rule to execute in a loop, break the loop if any rule can find all three - Amount, Date and Merchant.
+
+- When the expense is auto populated to Add-expense page via the share target API:
+  - I think its good to have a button to permanantly save (if all required fields are added).
+  - And also its good to have a button to partial save or save as draft if user is not filling category.
+  - When patial save happens it good to inform user they need to complete it later.
+  - seperate paritial saves into a diffrent storage key instead of adding to the main expenses. So that no need to filter for pending itmes when displaying main expenses.
+
+- Explore why share target APi was not working on the installed PWA and started working after uninstalling and re-installing the PWA. Is there some explicity need to be done line update service worker. Should we need to introduce an update button in the App, when heigher version is avilable or this should happen automatically.
+
+- Add Import
+  - As there is data migration required from old to the new app.
+  - Note to do not send current data in the AI chat. 
+  - Instead create few dummy data that span accros different months, years.
+  - The dummy data format should match with the current app stored data format.
+
+- Add export functionality
+
+- Add ability to store data to local. Explore possiblity of sync files to Google Drive, so that we use it like a server.
+
+- Check possibility of locking the app using finger print, if neede. As there no proper login. Some times phones provide that ability by default but not sure for PWAs.
+
+- Explore about notifications if pending Approval is there.
+

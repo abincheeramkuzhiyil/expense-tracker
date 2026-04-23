@@ -51,8 +51,14 @@ export interface SmsParserRule {
   merchantKeyword: string;
   /** Currency symbol shown in UI */
   currency: string;
-  /** Built-in rules cannot be edited or deleted by users */
+  /** True only for rules hardcoded in source (BUILT_IN_PARSER_RULES). Cannot be edited or deleted. */
   builtIn?: boolean;
+  /**
+   * When set, this user rule is a custom override for the built-in rule whose `id` matches this value.
+   * `builtIn` remains `false` on override rules so they are persisted to localStorage.
+   * At read time, `getSettings()` substitutes the built-in entry with this override.
+   */
+  overrideOf?: string;
 }
 
 /** Result of parsing an SMS — fields the parser was able to extract. */

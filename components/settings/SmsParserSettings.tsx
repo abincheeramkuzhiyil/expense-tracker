@@ -35,13 +35,14 @@ import EditIcon from '@mui/icons-material/Edit';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import CancelIcon from '@mui/icons-material/Cancel';
+import SettingsBackupRestoreIcon from '@mui/icons-material/SettingsBackupRestore';
 import { v4 as uuidv4 } from 'uuid';
 import { ParsedSmsResult, SmsParserRule } from '@/types/expense.types';
 import { useSettings } from '@/hooks/useSettings';
 import { testParserRule } from '@/utils/smsParser';
 
 const SAMPLE_SMS =
-  'Dear Customer, INR 1,250.00 debited from A/c XX1234 on 21-Apr-26 at AMAZON. Avl Bal: INR 45,320.00. -HDFC Bank';
+  'Dear Customer, INR 1,250.00 debited from A/c XX1234 on 21-Apr-26 to AMAZON. Avl Bal: INR 45,320.00. -HDFC Bank';
 
 interface RuleFormState {
   id: string;
@@ -49,6 +50,7 @@ interface RuleFormState {
   amountKeyword: string;
   merchantKeyword: string;
   currency: string;
+  overridingBuiltInId?: string;
 }
 
 const EMPTY_RULE_FORM: RuleFormState = {
@@ -57,6 +59,7 @@ const EMPTY_RULE_FORM: RuleFormState = {
   amountKeyword: '',
   merchantKeyword: '',
   currency: '₹',
+  overridingBuiltInId: undefined,
 };
 
 interface SnackbarState {
@@ -102,12 +105,14 @@ export default function SmsParserSettings() {
 
   function openEditEditor(rule: SmsParserRule) {
     setEditorMode('edit');
+    const builtInOriginId = rule.builtIn ? rule.id : rule.overrideOf;
     setEditorForm({
       id: rule.id,
       bankName: rule.bankName,
       amountKeyword: rule.amountKeyword,
       merchantKeyword: rule.merchantKeyword,
       currency: rule.currency,
+      overridingBuiltInId: builtInOriginId,
     });
     setEditorErrors({});
     setEditorOpen(true);
@@ -123,26 +128,57 @@ export default function SmsParserSettings() {
 
   function handleSaveRule() {
     if (!validateEditor()) return;
-    const trimmed: SmsParserRule = {
-      id: editorForm.id,
-      bankName: editorForm.bankName.trim(),
-      amountKeyword: editorForm.amountKeyword.trim(),
-      merchantKeyword: editorForm.merchantKeyword.trim(),
-      currency: editorForm.currency.trim() || '₹',
-      builtIn: false,
-    };
-    updateSettings((prev) => {
-      const existingIdx = prev.parserRules.findIndex((r) => r.id === trimmed.id);
-      const next = [...prev.parserRules];
-      if (existingIdx >= 0) {
-        next[existingIdx] = trimmed;
-      } else {
-        next.push(trimmed);
-      }
-      return { ...prev, parserRules: next };
-    });
+
+    if (editorForm.overridingBuiltInId) {
+      const overrideRule: SmsParserRule = {
+        id: `overridden-${editorForm.overridingBuiltInId}`,
+        bankName: editorForm.bankName.trim(),
+        amountKeyword: editorForm.amountKeyword.trim(),
+        merchantKeyword: editorForm.merchantKeyword.trim(),
+        currency: editorForm.currency.trim() || '₹',
+        builtIn: false,
+        overrideOf: editorForm.overridingBuiltInId,
+      };
+      updateSettings((prev) => {
+        // Remove any existing override for this built-in, then add the new one.
+        const withoutPrevOverride = prev.parserRules.filter((r) => r.overrideOf !== editorForm.overridingBuiltInId);
+        return { ...prev, parserRules: [...withoutPrevOverride, overrideRule] };
+      });
+    } else {
+      const trimmed: SmsParserRule = {
+        id: editorForm.id,
+        bankName: editorForm.bankName.trim(),
+        amountKeyword: editorForm.amountKeyword.trim(),
+        merchantKeyword: editorForm.merchantKeyword.trim(),
+        currency: editorForm.currency.trim() || '₹',
+        builtIn: false,
+      };
+      updateSettings((prev) => {
+        const existingIdx = prev.parserRules.findIndex((r) => r.id === trimmed.id);
+        const next = [...prev.parserRules];
+        if (existingIdx >= 0) {
+          next[existingIdx] = trimmed;
+        } else {
+          next.push(trimmed);
+        }
+        return { ...prev, parserRules: next };
+      });
+    }
+
     setEditorOpen(false);
     setSnackbar({ open: true, message: editorMode === 'add' ? 'Rule added' : 'Rule updated' });
+  }
+
+  /**
+   * Removes the user override for a built-in rule, causing `getSettings()` to
+   * fall back to the original hardcoded built-in values on the next read.
+   */
+  function handleRestoreBuiltIn(builtInId: string) {
+    updateSettings((prev) => ({
+      ...prev,
+      parserRules: prev.parserRules.filter((r) => r.overrideOf !== builtInId),
+    }));
+    setSnackbar({ open: true, message: 'Rule restored to default' });
   }
 
   function handleDeleteRule(rule: SmsParserRule) {
@@ -176,7 +212,7 @@ export default function SmsParserSettings() {
     );
   }
 
-  const userRules = settings.parserRules.filter((r) => !r.builtIn);
+  const userRules = settings.parserRules.filter((r) => !r.builtIn && !r.overrideOf);
 
   return (
     <>
@@ -203,43 +239,57 @@ export default function SmsParserSettings() {
           )}
 
           <Stack spacing={2}>
-            {settings.parserRules.map((rule) => (
-              <Card key={rule.id} variant="outlined">
-                <CardContent sx={{ pb: 1 }}>
-                  <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1 }}>
-                    <Typography variant="h6" component="div">
-                      {rule.bankName}
+            {settings.parserRules.map((rule) => {
+              const isOverride = !!rule.overrideOf;
+              const isBuiltInOrItsOverride = !!rule.builtIn || isOverride;
+              return (
+                <Card key={rule.id} variant="outlined">
+                  <CardContent sx={{ pb: 1 }}>
+                    <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1 }}>
+                      <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
+                        {rule.bankName}
+                      </Typography>
+                      {isBuiltInOrItsOverride && <Chip label="Built-in" size="small" color="default" />}
+                      {isOverride && <Chip label="Modified" size="small" color="warning" />}
+                      {isOverride && (
+                        <Tooltip title="Restore to default">
+                          <IconButton
+                            size="small"
+                            aria-label={`Restore ${rule.bankName} rule to default`}
+                            onClick={() => handleRestoreBuiltIn(rule.overrideOf!)}
+                          >
+                            <SettingsBackupRestoreIcon fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+                      )}
+                    </Stack>
+                    <Typography variant="body2" color="text.secondary">
+                      Amount keyword: <strong>{rule.amountKeyword}</strong>
+                      {rule.merchantKeyword && (
+                        <>
+                          {' '}· Merchant keyword: <strong>{rule.merchantKeyword}</strong>
+                        </>
+                      )}
                     </Typography>
-                    {rule.builtIn && <Chip label="Built-in" size="small" color="default" />}
-                  </Stack>
-                  <Typography variant="body2" color="text.secondary">
-                    Amount keyword: <strong>{rule.amountKeyword}</strong>
-                    {rule.merchantKeyword && (
-                      <>
-                        {' '}· Merchant keyword: <strong>{rule.merchantKeyword}</strong>
-                      </>
-                    )}
-                  </Typography>
-                </CardContent>
-                <CardActions sx={{ justifyContent: 'flex-end' }}>
-                  <Button
-                    size="small"
-                    startIcon={<PlayArrowIcon />}
-                    onClick={() => setTestRuleId(rule.id)}
-                  >
-                    Test
-                  </Button>
-                  {!rule.builtIn && (
-                    <>
-                      <Tooltip title="Edit rule">
-                        <IconButton
-                          size="small"
-                          aria-label={`Edit ${rule.bankName} rule`}
-                          onClick={() => openEditEditor(rule)}
-                        >
-                          <EditIcon fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
+                  </CardContent>
+                  <CardActions sx={{ justifyContent: 'flex-end' }}>
+                    <Button
+                      size="small"
+                      startIcon={<PlayArrowIcon />}
+                      onClick={() => setTestRuleId(rule.id)}
+                    >
+                      Test
+                    </Button>
+                    <Tooltip title={isBuiltInOrItsOverride ? 'Edit built-in rule (saves as override)' : 'Edit rule'}>
+                      <IconButton
+                        size="small"
+                        aria-label={`Edit ${rule.bankName} rule`}
+                        onClick={() => openEditEditor(rule)}
+                      >
+                        <EditIcon fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
+                    {!isBuiltInOrItsOverride && (
                       <Tooltip title="Delete rule">
                         <IconButton
                           size="small"
@@ -250,11 +300,11 @@ export default function SmsParserSettings() {
                           <DeleteIcon fontSize="small" />
                         </IconButton>
                       </Tooltip>
-                    </>
-                  )}
-                </CardActions>
-              </Card>
-            ))}
+                    )}
+                  </CardActions>
+                </Card>
+              );
+            })}
           </Stack>
         </Box>
 
@@ -263,9 +313,6 @@ export default function SmsParserSettings() {
           <CardContent>
             <Typography variant="h6" gutterBottom>
               Test a Rule
-            </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-              Paste a sample bank SMS to see what the selected rule extracts.
             </Typography>
 
             <FormControl fullWidth size="small" sx={{ mb: 2 }}>
@@ -293,6 +340,7 @@ export default function SmsParserSettings() {
               value={testText}
               onChange={(e) => setTestText(e.target.value)}
               sx={{ mb: 2 }}
+              helperText='Paste a sample bank SMS to see what the selected rule extracts.'
             />
 
             <Box>
@@ -316,7 +364,18 @@ export default function SmsParserSettings() {
 
       {/* Add/Edit dialog */}
       <Dialog open={editorOpen} onClose={() => setEditorOpen(false)} fullScreen={fullScreen} fullWidth maxWidth="sm">
-        <DialogTitle>{editorMode === 'add' ? 'Add Parser Rule' : 'Edit Parser Rule'}</DialogTitle>
+        <DialogTitle>
+          {editorMode === 'add'
+            ? 'Add Parser Rule'
+            : editorForm.overridingBuiltInId ? 'Edit Built-in Rule' : 'Edit Parser Rule'}
+        </DialogTitle>
+        {editorForm.overridingBuiltInId && (
+          <Box sx={{ px: 3, pb: 1 }}>
+            <Typography variant="body2" color="text.secondary">
+              Your changes will be saved as a custom override. Use Restore to default to revert.
+            </Typography>
+          </Box>
+        )}
         <DialogContent>
           <Grid container spacing={2} sx={{ mt: 0 }}>
             <Grid item xs={12}>
