@@ -120,6 +120,14 @@ function AddExpensePageContent() {
 
   const formSource: ExpenseSource = parseState.kind === 'success' ? 'sms' : 'manual';
 
+  const matchedRuleName = useMemo(() => {
+    if (parseState.kind !== 'success') return null;
+    return (
+      settings.parserRules.find((r) => r.id === parseState.result.matchedRuleId)?.bankName ??
+      'unknown rule'
+    );
+  }, [parseState, settings.parserRules]);
+
   return (
     <Box>
       <AppBar position="static" color="default" elevation={1}>
@@ -147,7 +155,7 @@ function AddExpensePageContent() {
         {parseState.kind === 'success' && (
           <Alert severity="success" sx={{ mb: 2 }}>
             <AlertTitle>Parsed from SMS</AlertTitle>
-            Review the details below and tap Save to record this expense.
+            Parsed using the <strong>{matchedRuleName}</strong> rule. Review the details below and tap Save to record this expense.
           </Alert>
         )}
 

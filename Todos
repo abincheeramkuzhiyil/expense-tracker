@@ -22,3 +22,7 @@
 
 - Explore about notifications if pending Approval is there.
 
+
+Quick test for SMS parsing:
+/expense-tracker/expenses/add?text=Dear%20Customer%2C%20INR%201%2C250.00%20debited%20from%20A%2Fc%20XX1234%20on%2021-Apr-26%20to%20AMAZON.%20Avl%20Bal%3A%20INR%2045%2C320.00.%20-HDFC%20Bank
+

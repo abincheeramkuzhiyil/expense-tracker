@@ -87,14 +87,28 @@ export function testParserRule(smsText: string, rule: SmsParserRule): ParsedSmsR
 }
 
 /**
- * Tries each rule in order; returns the first successful match, or null if none match.
- * A rule is considered to match only when an amount could be extracted.
+ * Tries all rules and returns the best match, or null if no rule extracts an amount.
+ *
+ * Scoring (higher = better):
+ *   2 — amount + description both extracted  → perfect match, loop exits early
+ *   1 — amount only (description missing)
+ *
+ * Date is excluded from scoring because extractDate() always returns a value
+ * (falling back to today), making it a non-discriminator between rules.
  */
 export function parseSms(text: string, rules: SmsParserRule[]): ParsedSmsResult | null {
   if (!text || !text.trim()) return null;
+  let bestResult: ParsedSmsResult | null = null;
+  let bestScore = 0;
   for (const rule of rules) {
     const result = testParserRule(text, rule);
-    if (result) return result;
+    if (!result) continue;
+    const score = result.description ? 2 : 1;
+    if (score > bestScore) {
+      bestResult = result;
+      bestScore = score;
+    }
+    if (bestScore === 2) break; // amount + merchant found — no need to check more rules
   }
-  return null;
+  return bestResult;
 }
