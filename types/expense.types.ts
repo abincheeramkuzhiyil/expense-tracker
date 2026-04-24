@@ -49,8 +49,6 @@ export interface SmsParserRule {
   amountKeyword: string;
   /** Word that appears immediately before the merchant/description, e.g. "at ", "to " */
   merchantKeyword: string;
-  /** Currency symbol shown in UI */
-  currency: string;
   /** True only for rules hardcoded in source (BUILT_IN_PARSER_RULES). Cannot be edited or deleted. */
   builtIn?: boolean;
   /**

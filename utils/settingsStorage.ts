@@ -9,7 +9,6 @@ export const BUILT_IN_PARSER_RULES: SmsParserRule[] = [
     bankName: 'HDFC Bank',
     amountKeyword: 'INR',
     merchantKeyword: 'to ',
-    currency: '₹',
     builtIn: true,
   },
   {
@@ -17,7 +16,6 @@ export const BUILT_IN_PARSER_RULES: SmsParserRule[] = [
     bankName: 'ICICI Bank',
     amountKeyword: 'Rs',
     merchantKeyword: 'to ',
-    currency: '₹',
     builtIn: true,
   },
   {
@@ -25,7 +23,6 @@ export const BUILT_IN_PARSER_RULES: SmsParserRule[] = [
     bankName: 'SBI',
     amountKeyword: 'Rs.',
     merchantKeyword: 'at ',
-    currency: '₹',
     builtIn: true,
   },
   {
@@ -33,7 +30,6 @@ export const BUILT_IN_PARSER_RULES: SmsParserRule[] = [
     bankName: 'Axis Bank',
     amountKeyword: 'INR',
     merchantKeyword: 'at ',
-    currency: '₹',
     builtIn: true,
   },
 ];

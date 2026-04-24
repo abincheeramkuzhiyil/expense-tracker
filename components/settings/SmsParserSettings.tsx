@@ -48,7 +48,6 @@ interface RuleFormState {
   bankName: string;
   amountKeyword: string;
   merchantKeyword: string;
-  currency: string;
   overridingBuiltInId?: string;
 }
 
@@ -57,7 +56,6 @@ const EMPTY_RULE_FORM: RuleFormState = {
   bankName: '',
   amountKeyword: '',
   merchantKeyword: '',
-  currency: '₹',
   overridingBuiltInId: undefined,
 };
 
@@ -112,7 +110,6 @@ export default function SmsParserSettings() {
       bankName: rule.bankName,
       amountKeyword: rule.amountKeyword,
       merchantKeyword: rule.merchantKeyword,
-      currency: rule.currency,
       overridingBuiltInId: builtInOriginId,
     });
     setEditorErrors({});
@@ -136,7 +133,6 @@ export default function SmsParserSettings() {
         bankName: editorForm.bankName.trim(),
         amountKeyword: editorForm.amountKeyword.trim(),
         merchantKeyword: editorForm.merchantKeyword.trim(),
-        currency: editorForm.currency.trim() || '₹',
         builtIn: false,
         overrideOf: editorForm.overridingBuiltInId,
       };
@@ -151,7 +147,6 @@ export default function SmsParserSettings() {
         bankName: editorForm.bankName.trim(),
         amountKeyword: editorForm.amountKeyword.trim(),
         merchantKeyword: editorForm.merchantKeyword.trim(),
-        currency: editorForm.currency.trim() || '₹',
         builtIn: false,
       };
       updateSettings((prev) => {
@@ -429,15 +424,6 @@ export default function SmsParserSettings() {
                 onChange={(e) => setEditorForm({ ...editorForm, bankName: e.target.value })}
                 error={!!editorErrors.bankName}
                 helperText={editorErrors.bankName}
-              />
-            </Grid>
-            <Grid item xs={6}>
-              <TextField
-                fullWidth
-                label="Currency"
-                value={editorForm.currency}
-                onChange={(e) => setEditorForm({ ...editorForm, currency: e.target.value })}
-                helperText="Display only"
               />
             </Grid>
             <Grid item xs={12}>

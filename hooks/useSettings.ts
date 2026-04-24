@@ -32,7 +32,9 @@ export function useSettings(): UseSettingsResult {
       setSettings((prev) => {
         const next = updater(prev);
         saveSettings(next);
-        return next;
+        // Re-normalize from storage so built-in rules are always correctly
+        // resolved (overrides substituted in, originals re-injected on restore).
+        return getSettings();
       });
     },
     []

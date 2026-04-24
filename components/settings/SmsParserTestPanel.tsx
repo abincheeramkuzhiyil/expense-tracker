@@ -1,5 +1,6 @@
 import {
   Box,
+  Chip,
   FormControl,
   InputLabel,
   MenuItem,
@@ -71,19 +72,32 @@ export default function TestPanelContent({
         label="Amount"
         value={
           testResult?.amount !== undefined
-            ? `${selectedRule?.currency ?? ''} ${testResult.amount.toFixed(2)}`
+            ? testResult.amount.toFixed(2)
             : null
         }
+        keyword={selectedRule?.amountKeyword}
       />
-      <ExtractedRow label="Merchant" value={testResult?.description ?? null} />
+      <ExtractedRow
+        label="Merchant"
+        value={testResult?.description ?? null}
+        keyword={selectedRule?.merchantKeyword}
+      />
       <ExtractedRow label="Date" value={testResult?.date ?? null} />
     </>
   );
 }
 
-function ExtractedRow({ label, value }: { label: string; value: string | null }) {
+function ExtractedRow({
+  label,
+  value,
+  keyword,
+}: {
+  label: string;
+  value: string | null;
+  keyword?: string;
+}) {
   return (
-    <Stack direction="row" alignItems="center" spacing={1} sx={{ py: 0.5 }}>
+    <Stack direction="row" alignItems="center" spacing={1} sx={{ py: 0.5 }} flexWrap="wrap">
       {value ? (
         <CheckCircleIcon color="success" fontSize="small" />
       ) : (
@@ -95,6 +109,19 @@ function ExtractedRow({ label, value }: { label: string; value: string | null })
       <Typography variant="body2">
         {value ?? <span style={{ fontStyle: 'italic', opacity: 0.6 }}>not extracted</span>}
       </Typography>
+      {keyword ? (
+        <Chip
+          label={
+            <span>
+              keyword:{' '}
+              <strong>{keyword}</strong>
+            </span>
+          }
+          size="small"
+          variant="outlined"
+          sx={{ fontSize: '0.7rem', height: 20 }}
+        />
+      ) : null}
     </Stack>
   );
 }
