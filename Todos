@@ -1,7 +1,4 @@
-- When the expense is auto populated to Add-expense page via the share target API:
-  - I think its good to have a button to permanantly save (if all required fields are added).
-  - And also its good to have a button to partial save or save as draft if user is not filling category.
-  - When patial save happens it good to inform user they need to complete it later.
+
 
 - Explore why share target APi was not working on the installed PWA and started working after uninstalling and re-installing the PWA. Is there some explicity need to be done line update service worker. Should we need to introduce an update button in the App, when heigher version is avilable or this should happen automatically.
 

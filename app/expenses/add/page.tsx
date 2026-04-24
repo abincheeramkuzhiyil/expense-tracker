@@ -13,10 +13,11 @@ import {
   AlertTitle,
   Skeleton,
   Link as MuiLink,
+  Snackbar,
 } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import AddExpenseForm, { ExpenseFormData } from '@/components/expense/AddExpenseForm';
-import { ExpenseSource, ExpenseStatus, ParsedSmsResult, ViewMode } from '@/types/expense.types';
+import { ExpenseSource, ParsedSmsResult, ViewMode } from '@/types/expense.types';
 import { addNewCategory, getCategories } from '@/utils/expenseCategories';
 import { saveExpense } from '@/utils/expenseStorage';
 import { parseSms } from '@/utils/smsParser';
@@ -52,6 +53,7 @@ function AddExpensePageContent() {
   const [parseState, setParseState] = useState<ParseState>(
     combinedSharedText ? { kind: 'loading' } : { kind: 'idle' }
   );
+  const [draftSnackbarOpen, setDraftSnackbarOpen] = useState(false);
 
   useEffect(() => {
     if (!combinedSharedText) {
@@ -100,13 +102,28 @@ function AddExpensePageContent() {
       addNewCategory(formData.category);
     }
 
-    // SMS-shared expenses save as 'pending' so they show up in the review banner.
-    // Manual entries (and SMS that couldn't be parsed) save as approved.
+    // Status is always 'approved' — the user explicitly chose Save over Save as Draft.
     const source: ExpenseSource = parseState.kind === 'success' ? 'sms' : 'manual';
-    const status: ExpenseStatus = parseState.kind === 'success' ? 'pending' : 'approved';
-
-    saveExpense(formData, source, status);
+    saveExpense(formData, source, 'approved');
     handleBack();
+  }
+
+  function handleSaveDraft(formData: ExpenseFormData) {
+    const existingCategories = getCategories();
+    const categoryExists = existingCategories.some(
+      (cat) => cat.toLowerCase() === formData.category.toLowerCase()
+    );
+    if (!categoryExists) {
+      addNewCategory(formData.category);
+    }
+
+    // Status is always 'pending' — the user explicitly chose Save as Draft.
+    const source: ExpenseSource = parseState.kind === 'success' ? 'sms' : 'manual';
+    saveExpense(formData, source, 'pending');
+
+    setDraftSnackbarOpen(true);
+    // Navigate back after a brief delay so the snackbar is readable.
+    setTimeout(() => handleBack(), 1500);
   }
 
   const initialValues: Partial<ExpenseFormData> | undefined =
@@ -183,6 +200,7 @@ function AddExpensePageContent() {
               defaultDate={defaultDate}
               viewMode={viewMode}
               onSave={handleSave}
+              onSaveDraft={handleSaveDraft}
               onCancel={handleCancel}
               initialValues={initialValues}
               source={formSource}
@@ -190,6 +208,13 @@ function AddExpensePageContent() {
           )}
         </Box>
       </Container>
+
+      <Snackbar
+        open={draftSnackbarOpen}
+        autoHideDuration={4000}
+        onClose={() => setDraftSnackbarOpen(false)}
+        message="Saved as draft. Open Pending Review to complete and approve."
+      />
     </Box>
   );
 }

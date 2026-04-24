@@ -133,7 +133,7 @@ function ExpensesPageContent() {
               </>
             }
           >
-            You have {pending.length} expense{pending.length === 1 ? '' : 's'} to review from SMS
+            You have {pending.length} expense{pending.length === 1 ? '' : 's'} to review and approve.
           </Alert>
         )}
 

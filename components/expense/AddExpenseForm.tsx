@@ -10,6 +10,8 @@ import {
   Alert,
   Grid,
   Chip,
+  useTheme,
+  useMediaQuery,
 } from '@mui/material';
 import SmsIcon from '@mui/icons-material/Sms';
 import { ExpenseSource, ViewMode } from '@/types/expense.types';
@@ -26,6 +28,12 @@ interface AddExpenseFormProps {
   source?: ExpenseSource;
   /** Override the default Save button label. */
   saveLabel?: string;
+  /**
+   * When provided, a "Save as Draft" button is rendered.
+   * Clicking it runs full validation then calls this handler with the form data.
+   * The caller decides the status (pending) — the form is status-agnostic.
+   */
+  onSaveDraft?: (formData: ExpenseFormData) => void;
 }
 
 export interface ExpenseFormData {
@@ -43,7 +51,10 @@ export default function AddExpenseForm({
   initialValues,
   source = 'manual',
   saveLabel = 'Save',
+  onSaveDraft,
 }: AddExpenseFormProps) {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [categories, setCategories] = useState<string[]>(() => getCategories());
   const [formData, setFormData] = useState<ExpenseFormData>({
     date: initialValues?.date ?? formatDateForInput(defaultDate),
@@ -110,6 +121,13 @@ export default function AddExpenseForm({
 
     if (validate()) {
       onSave(formData);
+    }
+  }
+
+  function handleSaveDraft(e: React.MouseEvent) {
+    e.preventDefault();
+    if (validate()) {
+      onSaveDraft!(formData);
     }
   }
 
@@ -222,14 +240,48 @@ export default function AddExpenseForm({
           </Grid>
 
           <Grid item xs={12}>
-            <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
-              <Button variant="outlined" onClick={onCancel}>
-                Cancel
-              </Button>
-              <Button variant="contained" type="submit">
-                {saveLabel}
-              </Button>
-            </Box>
+            {isMobile && onSaveDraft ? (
+              <Grid container spacing={1}>
+                <Grid item xs={6}>
+                  <Button
+                    variant="outlined"
+                    fullWidth
+                    onClick={handleSaveDraft}
+                    aria-label="Save as draft for later review"
+                  >
+                    Save as Draft
+                  </Button>
+                </Grid>
+                <Grid item xs={6}>
+                  <Button variant="contained" fullWidth type="submit">
+                    {saveLabel}
+                  </Button>
+                </Grid>
+                <Grid item xs={12}>
+                  <Button variant="text" onClick={onCancel}>
+                    Cancel
+                  </Button>
+                </Grid>
+              </Grid>
+            ) : (
+              <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
+                <Button variant="text" onClick={onCancel}>
+                  Cancel
+                </Button>
+                {onSaveDraft && (
+                  <Button
+                    variant="outlined"
+                    onClick={handleSaveDraft}
+                    aria-label="Save as draft for later review"
+                  >
+                    Save as Draft
+                  </Button>
+                )}
+                <Button variant="contained" type="submit">
+                  {saveLabel}
+                </Button>
+              </Box>
+            )}
           </Grid>
         </Grid>
       </form>
