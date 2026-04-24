@@ -4,6 +4,7 @@ import CssBaseline from '@mui/material/CssBaseline';
 import theme from '@/theme/theme';
 import Navigation from '@/components/layout/Navigation';
 import InstallPrompt from '@/components/layout/InstallPrompt';
+import MigrationProvider from '@/components/layout/MigrationProvider';
 import NotificationSchedulerProvider from '@/components/layout/NotificationSchedulerProvider';
 
 export const metadata: Metadata = {
@@ -48,6 +49,7 @@ export default function RootLayout({
           <Navigation />
           {children}
           <InstallPrompt />
+          <MigrationProvider />
           <NotificationSchedulerProvider />
         </ThemeProvider>
       </body>

@@ -26,8 +26,26 @@ export interface StoredExpense {
   date: string;        // "YYYY-MM-DD"
   description: string;
   source: ExpenseSource;
-  /** Optional for backward compatibility — missing = 'approved' */
+  /**
+   * @deprecated Legacy field. Items in the approved year/month buckets are always approved.
+   * Present on old records for backward compatibility only — never written to new approved entries.
+   */
   status?: ExpenseStatus;
+  createdAt: string;   // ISO string
+  updatedAt: string;   // ISO string
+}
+
+/**
+ * A pending expense stored in the dedicated pending queue (localStorage key `expense-tracker-pending`).
+ * No `status` field — presence in this bucket implies the expense is pending review.
+ */
+export interface PendingStoredExpense {
+  id: string;
+  amount: number;
+  category: string;
+  date: string;        // "YYYY-MM-DD"
+  description: string;
+  source: ExpenseSource;
   createdAt: string;   // ISO string
   updatedAt: string;   // ISO string
 }
