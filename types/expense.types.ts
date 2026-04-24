@@ -26,11 +26,6 @@ export interface StoredExpense {
   date: string;        // "YYYY-MM-DD"
   description: string;
   source: ExpenseSource;
-  /**
-   * @deprecated Legacy field. Items in the approved year/month buckets are always approved.
-   * Present on old records for backward compatibility only — never written to new approved entries.
-   */
-  status?: ExpenseStatus;
   createdAt: string;   // ISO string
   updatedAt: string;   // ISO string
 }
