@@ -243,13 +243,8 @@ export default function AddExpenseForm({
             {isMobile && onSaveDraft ? (
               <Grid container spacing={1}>
                 <Grid item xs={6}>
-                  <Button
-                    variant="outlined"
-                    fullWidth
-                    onClick={handleSaveDraft}
-                    aria-label="Save as draft for later review"
-                  >
-                    Save as Draft
+                  <Button variant="contained" color="black" fullWidth onClick={onCancel}>
+                    Cancel
                   </Button>
                 </Grid>
                 <Grid item xs={6}>
@@ -258,8 +253,13 @@ export default function AddExpenseForm({
                   </Button>
                 </Grid>
                 <Grid item xs={12}>
-                  <Button variant="text" onClick={onCancel}>
-                    Cancel
+                  <Button
+                    variant="outlined"
+                    fullWidth
+                    onClick={handleSaveDraft}
+                    aria-label="Save as draft for later review"
+                  >
+                    Save as Draft
                   </Button>
                 </Grid>
               </Grid>
