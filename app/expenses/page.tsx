@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, Suspense } from 'react';
+import { useState, useEffect, useRef, useCallback, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
   Alert,
@@ -23,7 +23,7 @@ import YearSummaryTable from '@/components/expense/YearSummaryTable';
 import AddExpenseFab from '@/components/expense/AddExpenseFab';
 import PendingExpenseReview from '@/components/expense/PendingExpenseReview';
 import { Expense, ViewMode } from '@/types/expense.types';
-import { getExpensesByDay, getExpensesByMonth, getExpensesByYear } from '@/utils/expenseStorage';
+import { getExpensesByDay, getExpensesByMonth, getExpensesByYear, subscribeToExpenseChanges } from '@/utils/expenseStorage';
 import { usePendingExpenses } from '@/hooks/usePendingExpenses';
 
 function ExpensesPageContent() {
@@ -62,6 +62,22 @@ function ExpensesPageContent() {
     } else {
       setExpenses(getExpensesByYear(year));
     }
+  }, [viewMode, currentDate]);
+
+  // Re-fetch whenever any expense is created, edited, or deleted (e.g. from DayDetailModal)
+  useEffect(() => {
+    return subscribeToExpenseChanges(() => {
+      if (typeof window === 'undefined') return;
+      const year = currentDate.getFullYear();
+      const month = currentDate.getMonth() + 1;
+      if (viewMode === 'day') {
+        setExpenses(getExpensesByDay(currentDate));
+      } else if (viewMode === 'month') {
+        setExpenses(getExpensesByMonth(year, month));
+      } else {
+        setExpenses(getExpensesByYear(year));
+      }
+    });
   }, [viewMode, currentDate]);
 
   // Sync state with URL params on mount and when params change
@@ -107,6 +123,11 @@ function ExpensesPageContent() {
   };
 
   const total = expenses.reduce((sum: number, exp: Expense) => sum + exp.amount, 0);
+
+  // Stable callback for ExpenseList to trigger a day-view refresh
+  const handleExpensesChanged = useCallback(() => {
+    setExpenses(getExpensesByDay(currentDate));
+  }, [currentDate]);
 
   return (
     <Box sx={{ marginY: '0.5rem' }}>
@@ -175,8 +196,7 @@ function ExpensesPageContent() {
                 <ExpenseList
                   expenses={expenses}
                   total={total}
-                  onEdit={(id) => console.log('Edit:', id)}
-                  onDelete={(id) => console.log('Delete:', id)}
+                  onExpensesChanged={handleExpensesChanged}
                 />
               )}
               {viewMode === 'month' && (

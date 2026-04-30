@@ -298,6 +298,107 @@ export function getAvailableYears(): number[] {
 }
 
 /**
+ * Deletes an approved expense from storage by its id.
+ *
+ * @param id   The UUID of the expense to delete.
+ * @param date The stored date of the expense in "YYYY-MM-DD" format, used to locate
+ *             the correct year/month bucket directly without scanning all years.
+ * @returns `true` if the expense was found and deleted, `false` otherwise.
+ */
+export function deleteExpense(id: string, date: string): boolean {
+  if (typeof window === 'undefined') return false;
+  try {
+    const [yearNum, monthNum] = date.split('-').map(Number);
+    const monthKey = String(monthNum);
+    const yearData = getYearData(yearNum);
+    const monthExpenses = yearData[monthKey];
+    if (!monthExpenses) return false;
+
+    const idx = monthExpenses.findIndex((e) => e.id === id);
+    if (idx === -1) return false;
+
+    monthExpenses.splice(idx, 1);
+    saveYearData(yearNum, yearData);
+    notifyChange();
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Updates an approved expense in storage.
+ *
+ * @param id             The UUID of the expense to update.
+ * @param formData       The new field values from the edit form.
+ * @param dateBeforeEdit The expense's date in "YYYY-MM-DD" format *before* the user
+ *                       made any changes, used to locate the correct year/month bucket.
+ *                       If the user changed the date in the form, the expense is moved
+ *                       from the old bucket into the new one.
+ * @returns The updated `Expense` object, or `null` if the expense was not found or an error occurred.
+ */
+export function updateExpense(
+  id: string,
+  formData: ExpenseFormData,
+  dateBeforeEdit: string
+): Expense | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const [oldYearNum, oldMonthNum] = dateBeforeEdit.split('-').map(Number);
+    const oldMonthKey = String(oldMonthNum);
+    const oldYearData = getYearData(oldYearNum);
+    const oldMonthExpenses = oldYearData[oldMonthKey];
+    if (!oldMonthExpenses) return null;
+
+    const idx = oldMonthExpenses.findIndex((e) => e.id === id);
+    if (idx === -1) return null;
+
+    const existing = oldMonthExpenses[idx];
+    const now = new Date().toISOString();
+
+    if (formData.date === dateBeforeEdit) {
+      // Date unchanged — update in-place
+      existing.amount = formData.amount;
+      existing.category = formData.category.trim();
+      existing.description = formData.description;
+      existing.updatedAt = now;
+      saveYearData(oldYearNum, oldYearData);
+    } else {
+      // Date changed — move to new bucket
+      oldMonthExpenses.splice(idx, 1);
+      saveYearData(oldYearNum, oldYearData);
+
+      const [newYearNum, newMonthNum] = formData.date.split('-').map(Number);
+      const newMonthKey = String(newMonthNum);
+      const newYearData = getYearData(newYearNum);
+      if (!newYearData[newMonthKey]) {
+        newYearData[newMonthKey] = [];
+      }
+
+      const updated: StoredExpense = {
+        ...existing,
+        amount: formData.amount,
+        category: formData.category.trim(),
+        date: formData.date,
+        description: formData.description,
+        updatedAt: now,
+      };
+      newYearData[newMonthKey].push(updated);
+      saveYearData(newYearNum, newYearData);
+      addYearToIndex(String(newYearNum));
+
+      notifyChange();
+      return storedToExpense(updated);
+    }
+
+    notifyChange();
+    return storedToExpense(existing);
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Clears all expense data and resets the in-memory cache.
  * Used by the seeder utility.
  */

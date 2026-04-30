@@ -68,3 +68,41 @@ export async function getLocalStorageItem(page: Page, key: string): Promise<any>
     return item ? JSON.parse(item) : null;
   }, key);
 }
+
+/**
+ * Seeds approved expenses into the year/month bucket format used by expenseStorage.ts.
+ * Each expense must have a date string in "YYYY-MM-DD" format.
+ * Expenses are grouped by year and month automatically.
+ */
+export async function seedApprovedExpenses(
+  page: Page,
+  expenses: Array<{
+    id: string;
+    amount: number;
+    category: string;
+    date: string; // "YYYY-MM-DD"
+    description: string;
+    source: string;
+    createdAt: string;
+    updatedAt: string;
+  }>
+): Promise<void> {
+  await page.addInitScript((items) => {
+    const YEAR_INDEX_KEY = 'expenseYearIndex';
+    // Group by year then month
+    const yearMap: Record<string, Record<string, typeof items>> = {};
+    for (const item of items) {
+      const [year, month] = item.date.split('-');
+      if (!yearMap[year]) yearMap[year] = {};
+      if (!yearMap[year][String(Number(month))]) yearMap[year][String(Number(month))] = [];
+      yearMap[year][String(Number(month))].push(item);
+    }
+    // Persist year index
+    const years = Object.keys(yearMap).sort();
+    localStorage.setItem(YEAR_INDEX_KEY, JSON.stringify(years));
+    // Persist each year's data
+    for (const year of years) {
+      localStorage.setItem(year, JSON.stringify(yearMap[year]));
+    }
+  }, expenses);
+}

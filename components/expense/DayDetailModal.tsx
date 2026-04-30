@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, forwardRef } from 'react';
+import { useState, useEffect, forwardRef, useCallback } from 'react';
 import {
   Dialog,
   AppBar,
@@ -42,6 +42,11 @@ export default function DayDetailModal({ open, date, onClose }: DayDetailModalPr
 
   const total = expenses.reduce((sum, exp) => sum + exp.amount, 0);
 
+  // Stable callback for ExpenseList to trigger a refresh of this day's expenses
+  const handleExpensesChanged = useCallback(() => {
+    setExpenses(getExpensesByDay(date));
+  }, [date]);
+
   const heading = date.toLocaleDateString('en-GB', {
     weekday: 'short',
     day: 'numeric',
@@ -69,8 +74,7 @@ export default function DayDetailModal({ open, date, onClose }: DayDetailModalPr
             <ExpenseList
               expenses={expenses}
               total={total}
-              onEdit={(id) => console.log('Edit:', id)}
-              onDelete={(id) => console.log('Delete:', id)}
+              onExpensesChanged={handleExpensesChanged}
             />
           </Box>
         </Grid>

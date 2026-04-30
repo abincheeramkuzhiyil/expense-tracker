@@ -16,7 +16,7 @@ import CloseIcon from '@mui/icons-material/Close';
 import MonthDayTable from './MonthDayTable';
 import AddExpenseFab from './AddExpenseFab';
 import { Expense } from '@/types/expense.types';
-import { getExpensesByMonth } from '@/utils/expenseStorage';
+import { getExpensesByMonth, subscribeToExpenseChanges } from '@/utils/expenseStorage';
 
 const SHORT_MONTHS = [
   'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
@@ -45,6 +45,15 @@ export default function MonthDetailModal({ open, year, month, onClose }: MonthDe
       setExpenses(getExpensesByMonth(year, month));
     }
   }, [year, month, open]);
+
+  // Re-fetch whenever any expense changes while this modal is open (e.g. edit/delete in DayDetailModal)
+  useEffect(() => {
+    return subscribeToExpenseChanges(() => {
+      if (open) {
+        setExpenses(getExpensesByMonth(year, month));
+      }
+    });
+  }, [open, year, month]);
 
   const heading = `${SHORT_MONTHS[month - 1]} ${year}`;
 

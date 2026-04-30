@@ -135,4 +135,59 @@ export class ExpensesPage {
     const url = new URL(this.page.url());
     return url.searchParams;
   }
+
+  // ─── Accordion helpers (day view) ─────────────────────────────────────────
+
+  /**
+   * Returns locators for expense accordion items (excludes the non-interactive
+   * header and footer rows that have no expand icon).
+   */
+  getExpenseAccordions() {
+    return this.page
+      .locator('.MuiAccordion-root')
+      .filter({ has: this.page.locator('.MuiAccordionSummary-expandIconWrapper') });
+  }
+
+  /**
+   * Expands the expense accordion at the given 0-based index.
+   */
+  async expandAccordionAt(index: number): Promise<void> {
+    await this.getExpenseAccordions().nth(index).click();
+  }
+
+  /**
+   * Expands the accordion at `index` then clicks its Delete button.
+   */
+  async clickDeleteOnAccordion(index: number): Promise<void> {
+    await this.expandAccordionAt(index);
+    await this.getExpenseAccordions()
+      .nth(index)
+      .getByRole('button', { name: /delete/i })
+      .click();
+  }
+
+  /**
+   * Expands the accordion at `index` then clicks its Edit button.
+   */
+  async clickEditOnAccordion(index: number): Promise<void> {
+    await this.expandAccordionAt(index);
+    await this.getExpenseAccordions()
+      .nth(index)
+      .getByRole('button', { name: /edit/i })
+      .click();
+  }
+
+  /**
+   * Clicks the "Confirm delete expense" button in the delete confirmation dialog.
+   */
+  async confirmDelete(): Promise<void> {
+    await this.page.getByRole('button', { name: 'Confirm delete expense' }).click();
+  }
+
+  /**
+   * Clicks the "Cancel delete" button in the delete confirmation dialog.
+   */
+  async cancelDelete(): Promise<void> {
+    await this.page.getByRole('button', { name: 'Cancel delete' }).click();
+  }
 }

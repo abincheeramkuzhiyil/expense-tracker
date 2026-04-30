@@ -16,6 +16,7 @@ import {
 import SmsIcon from '@mui/icons-material/Sms';
 import { ExpenseSource, ViewMode } from '@/types/expense.types';
 import { getCategories } from '@/utils/expenseCategories';
+import { formatDateForInput } from '@/utils/dateFormatter';
 
 interface AddExpenseFormProps {
   defaultDate: Date;
@@ -80,13 +81,6 @@ export default function AddExpenseForm({
       setIsNewCategory(false);
     }
   }, [formData.category, categories]);
-
-  function formatDateForInput(date: Date): string {
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
-  }
 
   function getDateFieldNote(): string | null {
     if (viewMode === 'month') {
