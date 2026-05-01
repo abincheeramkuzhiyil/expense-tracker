@@ -90,7 +90,7 @@ export default function DateNavigation({
             <Typography variant="body1" sx={{ fontWeight: 'bold' }}>{formatDate(currentDate)}</Typography>
             <Typography variant="caption">
               <span style={{ fontWeight: 'bold' }}>Total:</span>{' '}
-              <span style={{ fontWeight: 'bold' }}>₹{total.toFixed(2)}</span>
+              <span>₹{total.toFixed(2)}</span>
             </Typography>
           </Box>
         </Grid>

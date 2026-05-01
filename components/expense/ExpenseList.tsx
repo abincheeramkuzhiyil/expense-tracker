@@ -96,10 +96,10 @@ export default function ExpenseList({
       {expenses.map((expense) => (
         <Accordion key={expense.id}>
           <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-            <Typography sx={{ flexGrow: 1, fontWeight: 500 }}>
+            <Typography sx={{ flexGrow: 1 }}>
               {expense.category}
             </Typography>
-            <Typography sx={{ fontWeight: 500 }}>
+            <Typography>
               {expense.amount.toFixed(2)}
             </Typography>
           </AccordionSummary>
