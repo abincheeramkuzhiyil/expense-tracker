@@ -66,7 +66,7 @@ export default function Navigation() {
 
   return (
     <>
-      <AppBar position="static">
+      <AppBar position="fixed">
         <Toolbar>
           <IconButton
             color="inherit"
@@ -96,6 +96,7 @@ export default function Navigation() {
           </Tooltip>
         </Toolbar>
       </AppBar>
+      <Toolbar />
       <Drawer
         variant="temporary"
         open={mobileOpen}
