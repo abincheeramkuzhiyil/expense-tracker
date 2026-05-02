@@ -1,18 +1,9 @@
 'use client';
 
-import { useState, useEffect, forwardRef } from 'react';
-import {
-  Dialog,
-  AppBar,
-  Toolbar,
-  IconButton,
-  Typography,
-  Slide,
-  Box,
-  Grid,
-} from '@mui/material';
-import { TransitionProps } from '@mui/material/transitions';
-import CloseIcon from '@mui/icons-material/Close';
+import { useState, useEffect } from 'react';
+import { Box, Grid } from '@mui/material';
+import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
+import StandardBottomSheet from '@/components/common/StandardBottomSheet';
 import MonthDayTable from './MonthDayTable';
 import AddExpenseFab from './AddExpenseFab';
 import { Expense } from '@/types/expense.types';
@@ -22,13 +13,6 @@ const SHORT_MONTHS = [
   'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
   'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
 ];
-
-const SlideUpTransition = forwardRef(function SlideUpTransition(
-  props: TransitionProps & { children: React.ReactElement },
-  ref: React.Ref<unknown>
-) {
-  return <Slide direction="up" ref={ref} {...props} />;
-});
 
 interface MonthDetailModalProps {
   open: boolean;
@@ -58,19 +42,12 @@ export default function MonthDetailModal({ open, year, month, onClose }: MonthDe
   const heading = `${SHORT_MONTHS[month - 1]} ${year}`;
 
   return (
-    <Dialog fullScreen open={open} onClose={onClose} TransitionComponent={SlideUpTransition}>
-      <AppBar sx={{ position: 'fixed' }}>
-        <Toolbar>
-          <Typography variant="h6" sx={{ flexGrow: 1 }}>
-            {heading}
-          </Typography>
-          <IconButton edge="end" color="inherit" onClick={onClose} aria-label="close">
-            <CloseIcon />
-          </IconButton>
-        </Toolbar>
-      </AppBar>
-      {/* Spacer to push content below the fixed AppBar */}
-      <Toolbar />
+    <StandardBottomSheet
+      open={open}
+      onClose={onClose}
+      title={heading}
+      icon={<CalendarMonthIcon fontSize="small" sx={{ color: 'primary.contrastText' }} />}
+    >
       <Grid container>
         <Grid item xs={12} md={6} sx={{ margin: '0.5rem' }}>
           <Box sx={{ padding: '1rem', backgroundColor: '#eaeeef' }}>
@@ -79,6 +56,6 @@ export default function MonthDetailModal({ open, year, month, onClose }: MonthDe
         </Grid>
       </Grid>
       <AddExpenseFab viewMode="month" currentDate={new Date(year, month - 1, 1)} />
-    </Dialog>
+    </StandardBottomSheet>
   );
 }

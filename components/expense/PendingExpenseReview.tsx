@@ -14,19 +14,16 @@ import {
   DialogContent,
   DialogContentText,
   DialogTitle,
-  IconButton,
   Snackbar,
   Stack,
-  SwipeableDrawer,
   Typography,
-  useMediaQuery,
-  useTheme,
 } from '@mui/material';
-import CloseIcon from '@mui/icons-material/Close';
 import CheckIcon from '@mui/icons-material/Check';
 import CloseRoundedIcon from '@mui/icons-material/CloseRounded';
 import EditIcon from '@mui/icons-material/Edit';
+import DraftsIcon from '@mui/icons-material/Drafts';
 import SmsIcon from '@mui/icons-material/Sms';
+import StandardBottomSheet from '@/components/common/StandardBottomSheet';
 import { Expense } from '@/types/expense.types';
 import { usePendingExpenses } from '@/hooks/usePendingExpenses';
 import { saveExpense } from '@/utils/expenseStorage';
@@ -46,8 +43,6 @@ interface SnackbarState {
 const APPROVE_ALL_CONFIRM_THRESHOLD = 5;
 
 export default function PendingExpenseReview({ open, onClose }: PendingExpenseReviewProps) {
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const { pending, approve, reject, approveAll } = usePendingExpenses();
 
   const [snackbar, setSnackbar] = useState<SnackbarState>({ open: false, message: '' });
@@ -116,86 +111,57 @@ export default function PendingExpenseReview({ open, onClose }: PendingExpenseRe
     setSnackbar({ open: true, message: 'Expense updated and approved' });
   }
 
-  const content = (
-    <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-      {/* Header */}
-      <Stack
-        direction="row"
-        alignItems="center"
-        justifyContent="space-between"
-        sx={{
-          px: 2,
-          py: 1.5,
-          borderBottom: 1,
-          borderColor: 'divider',
-        }}
-      >
-        <Stack direction="row" alignItems="center" spacing={1.5}>
-          <Typography variant="h6" component="h2">
-            Pending Review
-          </Typography>
-          {pending.length > 0 && (
-            <Badge badgeContent={pending.length} color="primary" />
-          )}
-        </Stack>
-        <Stack direction="row" spacing={1}>
-          {pending.length > 1 && (
-            <Button
-              size="small"
-              startIcon={<CheckIcon />}
-              onClick={handleApproveAll}
-            >
-              Approve All
-            </Button>
-          )}
-          <IconButton onClick={onClose} aria-label="Close">
-            <CloseIcon />
-          </IconButton>
-        </Stack>
-      </Stack>
-
-      {/* Body */}
-      <Box sx={{ flex: 1, overflowY: 'auto', p: 2 }}>
-        {pending.length === 0 ? (
-          <EmptyState onClose={onClose} />
-        ) : (
-          <Stack spacing={2}>
-            {pending.map((expense) => (
-              <PendingItem
-                key={expense.id}
-                expense={expense}
-                onApprove={() => handleApprove(expense)}
-                onReject={() => handleReject(expense)}
-                onEdit={() => setEditing(expense)}
-              />
-            ))}
-          </Stack>
-        )}
-      </Box>
-    </Box>
-  );
-
   return (
     <>
-      {isMobile ? (
-        <SwipeableDrawer
-          anchor="bottom"
-          open={open}
-          onClose={onClose}
-          onOpen={() => {}}
-          disableSwipeToOpen
-          PaperProps={{
-            sx: { height: '85vh', borderTopLeftRadius: 16, borderTopRightRadius: 16 },
-          }}
-        >
-          <Box sx={{ width: 40, height: 4, bgcolor: 'grey.400', borderRadius: 2, mx: 'auto', my: 1 }} />
-          {content}
-        </SwipeableDrawer>
-      ) : (
-        <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth PaperProps={{ sx: { height: '70vh' } }}>
-          {content}
-        </Dialog>
-      )}
+      <StandardBottomSheet
+        open={open}
+        onClose={onClose}
+        title="Pending Review"
+        icon={<DraftsIcon fontSize="small" sx={{ color: 'primary.contrastText' }} />}
+      >
+        {/* Action bar: badge count + Approve All */}
+        {pending.length > 0 && (
+          <Stack
+            direction="row"
+            alignItems="center"
+            justifyContent="space-between"
+            sx={{ px: 2, py: 1, borderBottom: 1, borderColor: 'divider' }}
+          >
+            <Stack direction="row" alignItems="center" spacing={1}>
+              <Badge badgeContent={pending.length} color="primary">
+                <Box sx={{ width: 8 }} />
+              </Badge>
+              <Typography variant="body2" color="text.secondary">
+                {pending.length} expense{pending.length === 1 ? '' : 's'} pending
+              </Typography>
+            </Stack>
+            {pending.length > 1 && (
+              <Button size="small" startIcon={<CheckIcon />} onClick={handleApproveAll}>
+                Approve All
+              </Button>
+            )}
+          </Stack>
+        )}
+
+        {/* Body */}
+        <Box sx={{ flex: 1, overflowY: 'auto', p: 2 }}>
+          {pending.length === 0 ? (
+            <EmptyState onClose={onClose} />
+          ) : (
+            <Stack spacing={2}>
+              {pending.map((expense) => (
+                <PendingItem
+                  key={expense.id}
+                  expense={expense}
+                  onApprove={() => handleApprove(expense)}
+                  onReject={() => handleReject(expense)}
+                  onEdit={() => setEditing(expense)}
+                />
+              ))}
+            </Stack>
+          )}
+        </Box>
+      </StandardBottomSheet>
 
       {/* Approve All confirmation */}
       <Dialog open={confirmApproveAll} onClose={() => setConfirmApproveAll(false)}>
@@ -214,29 +180,31 @@ export default function PendingExpenseReview({ open, onClose }: PendingExpenseRe
       </Dialog>
 
       {/* Edit dialog */}
-      <Dialog open={!!editing} onClose={() => setEditing(null)} fullScreen={isMobile} maxWidth="sm" fullWidth>
-        <DialogTitle>Edit Expense</DialogTitle>
-        <DialogContent>
-          {editing && (
-            <Box sx={{ pt: 1 }}>
-              <AddExpenseForm
-                defaultDate={editing.date}
-                viewMode="day"
-                source={editing.source}
-                initialValues={{
-                  date: toIsoDate(editing.date),
-                  amount: editing.amount,
-                  category: editing.category,
-                  description: editing.description,
-                }}
-                onSave={handleEditSave}
-                onCancel={() => setEditing(null)}
-                saveLabel="Save & Approve"
-              />
-            </Box>
-          )}
-        </DialogContent>
-      </Dialog>
+      <StandardBottomSheet
+        open={!!editing}
+        onClose={() => setEditing(null)}
+        title="Edit Expense"
+        icon={<EditIcon fontSize="small" sx={{ color: 'primary.contrastText' }} />}
+      >
+        {editing && (
+          <Box sx={{ p: 2 }}>
+            <AddExpenseForm
+              defaultDate={editing.date}
+              viewMode="day"
+              source={editing.source}
+              initialValues={{
+                date: toIsoDate(editing.date),
+                amount: editing.amount,
+                category: editing.category,
+                description: editing.description,
+              }}
+              onSave={handleEditSave}
+              onCancel={() => setEditing(null)}
+              saveLabel="Save & Approve"
+            />
+          </Box>
+        )}
+      </StandardBottomSheet>
 
       {/* Feedback */}
       <Snackbar

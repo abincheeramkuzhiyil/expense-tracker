@@ -1,29 +1,13 @@
 'use client';
 
-import { useState, useEffect, forwardRef, useCallback } from 'react';
-import {
-  Dialog,
-  AppBar,
-  Toolbar,
-  IconButton,
-  Typography,
-  Slide,
-  Box,
-  Grid,
-} from '@mui/material';
-import { TransitionProps } from '@mui/material/transitions';
-import CloseIcon from '@mui/icons-material/Close';
+import { useState, useEffect, useCallback } from 'react';
+import { Box, Grid } from '@mui/material';
+import EventIcon from '@mui/icons-material/Event';
+import StandardBottomSheet from '@/components/common/StandardBottomSheet';
 import ExpenseList from './ExpenseList';
 import AddExpenseFab from './AddExpenseFab';
 import { Expense } from '@/types/expense.types';
 import { getExpensesByDay } from '@/utils/expenseStorage';
-
-const SlideUpTransition = forwardRef(function SlideUpTransition(
-  props: TransitionProps & { children: React.ReactElement },
-  ref: React.Ref<unknown>
-) {
-  return <Slide direction="up" ref={ref} {...props} />;
-});
 
 interface DayDetailModalProps {
   open: boolean;
@@ -55,19 +39,12 @@ export default function DayDetailModal({ open, date, onClose }: DayDetailModalPr
   });
 
   return (
-    <Dialog fullScreen open={open} onClose={onClose} TransitionComponent={SlideUpTransition}>
-      <AppBar sx={{ position: 'fixed' }}>
-        <Toolbar>
-          <Typography variant="h6" sx={{ flexGrow: 1 }}>
-            {heading}
-          </Typography>
-          <IconButton edge="end" color="inherit" onClick={onClose} aria-label="close">
-            <CloseIcon />
-          </IconButton>
-        </Toolbar>
-      </AppBar>
-      {/* Spacer to push content below the fixed AppBar */}
-      <Toolbar />
+    <StandardBottomSheet
+      open={open}
+      onClose={onClose}
+      title={heading}
+      icon={<EventIcon fontSize="small" sx={{ color: 'primary.contrastText' }} />}
+    >
       <Grid container>
         <Grid item xs={12} md={6} sx={{ margin: '0.5rem' }}>
           <Box sx={{ padding: '1rem', backgroundColor: '#eaeeef' }}>
@@ -80,6 +57,6 @@ export default function DayDetailModal({ open, date, onClose }: DayDetailModalPr
         </Grid>
       </Grid>
       <AddExpenseFab viewMode="day" currentDate={date} />
-    </Dialog>
+    </StandardBottomSheet>
   );
 }
