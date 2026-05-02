@@ -1,29 +1,16 @@
 'use client';
 
-import { forwardRef } from 'react';
 import {
-  AppBar,
   Box,
-  Dialog,
   IconButton,
-  Slide,
   Stack,
   SwipeableDrawer,
-  Toolbar,
   Typography,
 } from '@mui/material';
-import { TransitionProps } from '@mui/material/transitions';
 import CloseIcon from '@mui/icons-material/Close';
 import OpenInFullIcon from '@mui/icons-material/OpenInFull';
 import CloseFullscreenIcon from '@mui/icons-material/CloseFullscreen';
 import { useUserPreferences } from '@/hooks/useUserPreferences';
-
-const SlideUpTransition = forwardRef(function SlideUpTransition(
-  props: TransitionProps & { children: React.ReactElement },
-  ref: React.Ref<unknown>
-) {
-  return <Slide direction="up" ref={ref} {...props} />;
-});
 
 export interface StandardBottomSheetProps {
   open: boolean;
@@ -36,8 +23,9 @@ export interface StandardBottomSheetProps {
 /**
  * Unified bottom-sheet wrapper used by all major content dialogs.
  *
- * - Default (minimized) mode: SwipeableDrawer anchored bottom, 85vh, rounded top corners.
- * - Maximized mode: fullscreen Dialog with slide-up transition.
+ * - Sheet mode: SwipeableDrawer anchored bottom, 85vh, rounded top corners.
+ * - Maximized mode: SwipeableDrawer expanded to 100dvh, square top corners.
+ * - Swipe down → closes the drawer in both modes.
  * - The maximized/minimized state is a global user preference persisted in localStorage
  *   so the user's choice is remembered across sessions.
  */
@@ -87,21 +75,6 @@ export default function StandardBottomSheet({
     </Stack>
   );
 
-  if (isMaximized) {
-    return (
-      <Dialog fullScreen open={open} onClose={onClose} TransitionComponent={SlideUpTransition}>
-        <AppBar sx={{ position: 'fixed', bgcolor: 'primary.main' }}>
-          <Toolbar>{headerContent}</Toolbar>
-        </AppBar>
-        {/* Spacer to push content below the fixed AppBar */}
-        <Toolbar />
-        <Box sx={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
-          {children}
-        </Box>
-      </Dialog>
-    );
-  }
-
   return (
     <SwipeableDrawer
       anchor="bottom"
@@ -111,11 +84,12 @@ export default function StandardBottomSheet({
       disableSwipeToOpen
       PaperProps={{
         sx: {
-          height: '85vh',
-          borderTopLeftRadius: 16,
-          borderTopRightRadius: 16,
+          height: isMaximized ? '100dvh' : '85vh',
+          borderTopLeftRadius: isMaximized ? 0 : 16,
+          borderTopRightRadius: isMaximized ? 0 : 16,
           display: 'flex',
           flexDirection: 'column',
+          transition: 'height 0.3s cubic-bezier(0.4, 0, 0.2, 1), border-radius 0.2s ease',
         },
       }}
     >
@@ -124,17 +98,18 @@ export default function StandardBottomSheet({
       <Box
         sx={{
           bgcolor: 'primary.main',
-          borderTopLeftRadius: 16,
-          borderTopRightRadius: 16,
+          borderTopLeftRadius: isMaximized ? 0 : 16,
+          borderTopRightRadius: isMaximized ? 0 : 16,
           px: 2,
           pt: 1,
           pb: 1,
           display: 'flex',
           flexDirection: 'column',
-          alignItems: 'center'
+          alignItems: 'center',
+          transition: 'border-radius 0.2s ease',
         }}
       >
-        {/* Drag handle pill — semi-transparent white reads against the primary colour */}
+        {/* Drag handle pill — always visible as swipe affordance in both modes */}
         <Box
           sx={{
             width: 40,
