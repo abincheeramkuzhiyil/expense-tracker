@@ -37,11 +37,11 @@ export default function StandardBottomSheet({
   children,
 }: StandardBottomSheetProps) {
   const { preferences, updatePreference } = useUserPreferences();
-  const isMaximized = preferences.dialogDisplayMode === 'fullscreen';
+  const isMaximized = preferences.bottomSheetMode === 'maximized';
 
   function handleToggleMaximize() {
-    const newMode = isMaximized ? 'sheet' : 'fullscreen';
-    updatePreference('dialogDisplayMode', newMode);
+    const newMode = isMaximized ? 'minimized' : 'maximized';
+    updatePreference('bottomSheetMode', newMode);
   }
 
   const headerContent = (

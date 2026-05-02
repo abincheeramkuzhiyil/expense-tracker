@@ -3,7 +3,7 @@ import { UserPreferences } from '@/types/userPreferences.types';
 const STORAGE_KEY = 'userPreferences';
 
 const DEFAULT_PREFERENCES: UserPreferences = {
-  dialogDisplayMode: 'sheet',
+  bottomSheetMode: 'minimized',
 };
 
 /**

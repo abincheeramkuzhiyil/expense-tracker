@@ -3,6 +3,6 @@
  * Add new preference properties here as the application grows.
  */
 export interface UserPreferences {
-  /** Controls whether content dialogs open as a bottom sheet or fullscreen. */
-  dialogDisplayMode: 'sheet' | 'fullscreen';
+  /** Controls whether the bottom sheet opens in minimized (85vh) or maximized (full height) mode. */
+  bottomSheetMode: 'minimized' | 'maximized';
 }
