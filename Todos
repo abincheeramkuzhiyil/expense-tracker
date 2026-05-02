@@ -1,4 +1,9 @@
 
+- Fix the buttons in Add expense page and pop-up.
+- Fix the border space of all screens in the app. In mobile view too much space near boarder. (Refer DODO app for reference.)
+- Add focus ring when icon/button is clicked and a dialog gets slide-up. This is because after closing the dialog I am getting confused where had I clicked and the dialog opened.
+  - On which month/day details dialog, this is a common problem. 
+  - Also in day view expense listing/dialog if multiple expenses accordions are opened then if click on edit > a dialog opens-up. When I close the dialog I am getting confused which expense was I editing
 
 - Explore why share target APi was not working on the installed PWA and started working after uninstalling and re-installing the PWA. Is there some explicity need to be done line update service worker. Should we need to introduce an update button in the App, when heigher version is avilable or this should happen automatically.
 
