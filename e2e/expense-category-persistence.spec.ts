@@ -133,11 +133,11 @@ test.describe('Expense Category Persistence', () => {
     await addPage.navigate();
     
     // With no seeded categories, should fall back to defaults
-    await addPage.categoryField.click();
+    await addPage.categoryGroupField.click();
     await page.waitForTimeout(300);
     
     // Should still have default categories available
-    await addPage.categoryField.fill('Foo');
+    await addPage.categoryGroupField.fill('Foo');
     await expect(page.getByRole('option', { name: /food/i })).toBeVisible();
   });
 });
