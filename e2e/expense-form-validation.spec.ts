@@ -19,7 +19,7 @@ test.describe('Expense Form Validation', () => {
     await addPage.navigate();
     
     await addPage.fillForm({
-      category: 'Food',
+      spentOn: 'Lunch',
       amount: -10,
       description: 'Test',
     });
@@ -47,7 +47,7 @@ test.describe('Expense Form Validation', () => {
     // Clear the date field
     await addPage.fillDate('');
     await addPage.fillForm({
-      category: 'Food',
+      spentOn: 'Lunch',
       amount: 100,
     });
     
@@ -57,13 +57,13 @@ test.describe('Expense Form Validation', () => {
     await expect(page).toHaveURL(/\/expenses\/add/);
   });
 
-  test('should require category field', async ({ page }) => {
+  test('should require Spent On field', async ({ page }) => {
     const addPage = new AddExpensePage(page);
     await addPage.navigate();
     
     await addPage.fillDate('2026-03-01');
     await addPage.fillAmount(100);
-    // Don't fill category
+    // Don't fill Spent On
     
     await addPage.clickSave();
     
@@ -77,7 +77,7 @@ test.describe('Expense Form Validation', () => {
     
     // Fill only required fields
     await addPage.fillForm({
-      category: 'Food',
+      spentOn: 'Lunch',
       amount: 100,
     });
     
@@ -105,12 +105,12 @@ test.describe('Expense Form Validation', () => {
     const addPage = new AddExpensePage(page);
     await addPage.navigate();
     
-    // Click category field and type
-    await addPage.categoryField.click();
-    await addPage.categoryField.fill('Foo');
+    // Click Spent On field and type
+    await addPage.spentOnField.click();
+    await addPage.spentOnField.fill('Foo');
     
-    // Should show filtered options containing 'Foo' (Food)
-    await expect(page.getByRole('option', { name: /food/i })).toBeVisible();
+    // Should show filtered Spent On options containing 'Foo' (Food-related items)
+    await expect(page.getByRole('option', { name: /food|breakfast|lunch|dinner/i }).first()).toBeVisible();
   });
 
   test('should show info alert when typing new category', async ({ page, seedExpenses }) => {
@@ -119,12 +119,12 @@ test.describe('Expense Form Validation', () => {
     const addPage = new AddExpensePage(page);
     await addPage.navigate();
     
-    // Type a new category that doesn't exist
-    await addPage.categoryField.click();
-    await addPage.categoryField.fill('NewCategory123');
+    // Type a new Spent On that doesn't exist
+    await addPage.spentOnField.click();
+    await addPage.spentOnField.fill('NewSpentOn123');
     await page.waitForTimeout(500);
     
-    // Should show info about new category
+    // Should show info about new Spent On
     // Note: This behavior might need adjustment based on actual implementation
     const hasAlert = await addPage.hasInfoAlert();
     if (hasAlert) {

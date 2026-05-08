@@ -16,7 +16,8 @@ export const sampleExpenses: Expense[] = [
   {
     id: '1',
     amount: 1001.00,
-    category: 'test',
+    spentOn: 'Test',
+    category: 'Other',
     date: new Date('2026-02-15'),
     description: 'www',
     source: 'manual',
@@ -27,7 +28,8 @@ export const sampleExpenses: Expense[] = [
   {
     id: '2',
     amount: 250.50,
-    category: 'Groceries',
+    spentOn: 'Groceries',
+    category: 'Food',
     date: new Date('2026-02-15'),
     description: 'Weekly grocery shopping',
     source: 'manual',
@@ -38,7 +40,8 @@ export const sampleExpenses: Expense[] = [
   {
     id: '3',
     amount: 45.00,
-    category: 'Transportation',
+    spentOn: 'Taxi',
+    category: 'Travel',
     date: new Date('2026-02-14'),
     description: 'Uber ride to office',
     source: 'sms',
@@ -49,7 +52,8 @@ export const sampleExpenses: Expense[] = [
   {
     id: '4',
     amount: 120.00,
-    category: 'Dining',
+    spentOn: 'Dinner',
+    category: 'Food',
     date: new Date('2026-02-14'),
     description: 'Dinner at restaurant',
     source: 'manual',
@@ -60,6 +64,7 @@ export const sampleExpenses: Expense[] = [
   {
     id: '5',
     amount: 500.00,
+    spentOn: 'Concert',
     category: 'Entertainment',
     date: new Date('2026-02-13'),
     description: 'Concert tickets',

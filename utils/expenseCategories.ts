@@ -2,7 +2,7 @@ const STORAGE_KEY = 'expenseCategories';
 
 export const DEFAULT_CATEGORIES = [
   'Food',
-  'Transport',
+  'Travel',
   'Shopping',
   'Entertainment',
   'Bills',
@@ -53,14 +53,12 @@ export function saveCategories(categories: string[]): void {
  * @param category - Category string to add
  */
 export function addNewCategory(category: string): void {
-  const categories = getCategories();
   const trimmedCategory = category.trim();
-
   if (!trimmedCategory) {
     return;
   }
 
-  // Check if category already exists (case-insensitive)
+  const categories = getCategories();
   const exists = categories.some(
     (cat) => cat.toLowerCase() === trimmedCategory.toLowerCase()
   );

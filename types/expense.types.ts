@@ -9,6 +9,9 @@ export type ExpenseStatus = 'pending' | 'approved';
 export interface Expense {
   id: string;
   amount: number;
+  /** Specific item the money was spent on, e.g. "Breakfast", "Fuel" */
+  spentOn: string;
+  /** High-level group category, e.g. "Food", "Travel" */
   category: string;
   date: Date;
   description: string;
@@ -22,6 +25,9 @@ export interface Expense {
 export interface StoredExpense {
   id: string;
   amount: number;
+  /** Specific item the money was spent on, e.g. "Breakfast", "Fuel" */
+  spentOn: string;
+  /** High-level group category, e.g. "Food", "Travel" */
   category: string;
   date: string;        // "YYYY-MM-DD"
   description: string;
@@ -37,6 +43,9 @@ export interface StoredExpense {
 export interface PendingStoredExpense {
   id: string;
   amount: number;
+  /** Specific item the money was spent on, e.g. "Breakfast", "Fuel" */
+  spentOn: string;
+  /** High-level group category, e.g. "Food", "Travel" */
   category: string;
   date: string;        // "YYYY-MM-DD"
   description: string;

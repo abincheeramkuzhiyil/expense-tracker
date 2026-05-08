@@ -97,13 +97,16 @@ export default function ExpenseList({
         <Accordion key={expense.id}>
           <AccordionSummary expandIcon={<ExpandMoreIcon />}>
             <Typography sx={{ flexGrow: 1 }}>
-              {expense.category}
+              {expense.spentOn}
             </Typography>
             <Typography>
               {expense.amount.toFixed(2)}
             </Typography>
           </AccordionSummary>
           <AccordionDetails>
+            <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 0.5 }}>
+              {expense.category}
+            </Typography>
             <Typography>
               <b>Details:</b> {expense.description}
             </Typography>

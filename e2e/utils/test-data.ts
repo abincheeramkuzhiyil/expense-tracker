@@ -5,7 +5,7 @@ import { Expense } from '../../types/expense.types';
  */
 export const DEFAULT_CATEGORIES = [
   'Food',
-  'Transport',
+  'Travel',
   'Shopping',
   'Entertainment',
   'Bills',
@@ -21,6 +21,7 @@ export const SAMPLE_EXPENSES: Expense[] = [
   {
     id: '1',
     amount: 250.50,
+    spentOn: 'Groceries',
     category: 'Food',
     date: new Date('2026-03-01'),
     description: 'Grocery shopping at supermarket',
@@ -32,7 +33,8 @@ export const SAMPLE_EXPENSES: Expense[] = [
   {
     id: '2',
     amount: 45.00,
-    category: 'Transport',
+    spentOn: 'Taxi',
+    category: 'Travel',
     date: new Date('2026-03-01'),
     description: 'Taxi to office',
     source: 'manual',
@@ -43,6 +45,7 @@ export const SAMPLE_EXPENSES: Expense[] = [
   {
     id: '3',
     amount: 120.75,
+    spentOn: 'Movie',
     category: 'Entertainment',
     date: new Date('2026-02-28'),
     description: 'Movie tickets and dinner',
@@ -54,6 +57,7 @@ export const SAMPLE_EXPENSES: Expense[] = [
   {
     id: '4',
     amount: 1500.00,
+    spentOn: 'Rent',
     category: 'Bills',
     date: new Date('2026-02-15'),
     description: 'Monthly rent payment',
@@ -65,6 +69,7 @@ export const SAMPLE_EXPENSES: Expense[] = [
   {
     id: '5',
     amount: 89.99,
+    spentOn: 'Shoes',
     category: 'Shopping',
     date: new Date('2026-01-20'),
     description: 'New running shoes',
@@ -76,6 +81,7 @@ export const SAMPLE_EXPENSES: Expense[] = [
   {
     id: '6',
     amount: 350.00,
+    spentOn: 'Doctor',
     category: 'Healthcare',
     date: new Date('2025-12-10'),
     description: 'Dental checkup',
@@ -117,6 +123,7 @@ export function createTestExpense(overrides: Partial<Expense> = {}): Expense {
   return {
     id: Math.random().toString(36).substr(2, 9),
     amount: 100.00,
+    spentOn: 'Lunch',
     category: 'Food',
     date: new Date(),
     description: 'Test expense',

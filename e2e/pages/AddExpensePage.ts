@@ -8,7 +8,8 @@ export class AddExpensePage {
   readonly backButton: Locator;
   readonly pageTitle: Locator;
   readonly dateField: Locator;
-  readonly categoryField: Locator;
+  readonly spentOnField: Locator;
+  readonly categoryGroupField: Locator;
   readonly amountField: Locator;
   readonly descriptionField: Locator;
   readonly saveButton: Locator;
@@ -20,7 +21,8 @@ export class AddExpensePage {
     this.backButton = page.getByRole('button', { name: /back/i }).first();
     this.pageTitle = page.getByRole('heading', { name: /add expense/i });
     this.dateField = page.getByLabel(/date/i);
-    this.categoryField = page.getByLabel(/category/i);
+    this.spentOnField = page.getByLabel(/spent on/i);
+    this.categoryGroupField = page.getByLabel(/^category$/i);
     this.amountField = page.getByLabel(/amount/i);
     this.descriptionField = page.getByLabel(/description/i);
     this.saveButton = page.getByRole('button', { name: /save/i });
@@ -50,17 +52,28 @@ export class AddExpensePage {
   }
 
   /**
-   * Select or type category
+   * Select or type a Spent On value
    */
-  async selectCategory(category: string): Promise<void> {
-    await this.categoryField.click();
-    await this.categoryField.fill(category);
-    // Try to click the option if it exists in the dropdown
+  async selectSpentOn(spentOn: string): Promise<void> {
+    await this.spentOnField.click();
+    await this.spentOnField.fill(spentOn);
+    try {
+      await this.page.getByRole('option', { name: spentOn, exact: true }).click({ timeout: 1000 });
+    } catch {
+      await this.spentOnField.press('Enter');
+    }
+  }
+
+  /**
+   * Select or type a Category group value (only visible for new Spent On values or in edit mode)
+   */
+  async selectCategoryGroup(category: string): Promise<void> {
+    await this.categoryGroupField.click();
+    await this.categoryGroupField.fill(category);
     try {
       await this.page.getByRole('option', { name: category, exact: true }).click({ timeout: 1000 });
     } catch {
-      // If option doesn't exist, just press Enter to accept the typed value
-      await this.categoryField.press('Enter');
+      await this.categoryGroupField.press('Enter');
     }
   }
 
@@ -149,14 +162,24 @@ export class AddExpensePage {
    */
   async fillForm(data: {
     date?: string;
-    category: string;
+    spentOn: string;
+    category?: string;
     amount: string | number;
     description?: string;
   }): Promise<void> {
     if (data.date) {
       await this.fillDate(data.date);
     }
-    await this.selectCategory(data.category);
+    await this.selectSpentOn(data.spentOn);
+    // Category group is auto-resolved for known Spent On values.
+    // Only fill it if explicitly provided (new Spent On scenario).
+    if (data.category) {
+      try {
+        await this.selectCategoryGroup(data.category);
+      } catch {
+        // Category may already be resolved as a pill — ignore
+      }
+    }
     await this.fillAmount(data.amount);
     if (data.description) {
       await this.fillDescription(data.description);

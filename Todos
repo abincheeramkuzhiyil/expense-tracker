@@ -1,5 +1,5 @@
 
-- Fix the buttons in Add expense page and pop-up.
+- Fix the buttons in Add expense page (3 button not looking great currently) and pop-up.
 - Fix the border space of all screens in the app. In mobile view too much space near boarder. (Refer DODO app for reference.)
 - Add focus ring when icon/button is clicked and a dialog gets slide-up. This is because after closing the dialog I am getting confused where had I clicked and the dialog opened.
   - On which month/day details dialog, this is a common problem. 

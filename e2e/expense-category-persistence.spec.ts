@@ -10,8 +10,9 @@ test.describe('Expense Category Persistence', () => {
     const addPage = new AddExpensePage(page);
     await addPage.navigate();
     
-    // Fill form with a new category
+    // Fill form with a new Spent On and a new category group
     await addPage.fillForm({
+      spentOn: 'CustomItem',
       category: 'CustomCategory',
       amount: 100,
       description: 'Test expense',
@@ -32,9 +33,10 @@ test.describe('Expense Category Persistence', () => {
     
     const addPage = new AddExpensePage(page);
     
-    // Add the same category twice
+    // Add the same Spent On + category twice
     await addPage.navigate();
     await addPage.fillForm({
+      spentOn: 'NewItem',
       category: 'NewCategory',
       amount: 100,
     });
@@ -44,6 +46,7 @@ test.describe('Expense Category Persistence', () => {
     // Go back and add same category again
     await page.goto('/expenses/add');
     await addPage.fillForm({
+      spentOn: 'NewItem',
       category: 'NewCategory',
       amount: 50,
     });
@@ -61,10 +64,11 @@ test.describe('Expense Category Persistence', () => {
     
     const addPage = new AddExpensePage(page);
     
-    // First, add a new category
+    // First, add a new Spent On with a new category group
     await addPage.navigate();
     await addPage.fillForm({
-      category: 'Groceries',
+      spentOn: 'Groceries',
+      category: 'Food',
       amount: 200,
     });
     await addPage.clickSave();
@@ -73,13 +77,13 @@ test.describe('Expense Category Persistence', () => {
     // Navigate back to add page
     await page.goto('/expenses/add');
     
-    // Open category dropdown
-    await addPage.categoryField.click();
+    // Open Spent On dropdown and type
+    await addPage.spentOnField.click();
     await page.waitForTimeout(300);
     
-    // New category should appear in options
+    // Groceries should appear in Spent On options
     // Type part of it to filter
-    await addPage.categoryField.fill('Groc');
+    await addPage.spentOnField.fill('Groc');
     await expect(page.getByRole('option', { name: /groceries/i })).toBeVisible();
   });
 
@@ -89,8 +93,9 @@ test.describe('Expense Category Persistence', () => {
     const addPage = new AddExpensePage(page);
     await addPage.navigate();
     
-    // Add a new category
+    // Add a new Spent On with a new category group
     await addPage.fillForm({
+      spentOn: 'Investment',
       category: 'Investment',
       amount: 5000,
     });
@@ -103,7 +108,7 @@ test.describe('Expense Category Persistence', () => {
     
     // Should contain both defaults and new category
     expect(categories).toContain('Food'); // Default
-    expect(categories).toContain('Transport'); // Default
+    expect(categories).toContain('Travel'); // Default
     expect(categories).toContain('Investment'); // New
   });
 
@@ -114,12 +119,12 @@ test.describe('Expense Category Persistence', () => {
     const addPage = new AddExpensePage(page);
     await addPage.navigate();
     
-    // Open category dropdown
-    await addPage.categoryField.click();
+    // Open Spent On dropdown and type to filter
+    await addPage.spentOnField.click();
     await page.waitForTimeout(300);
     
-    // Custom categories should be available
-    await addPage.categoryField.fill('Custom');
+    // Custom Spent On suggestions should be available (seeded via mapping)
+    await addPage.spentOnField.fill('Custom');
     await expect(page.getByRole('option', { name: /customcat1/i })).toBeVisible();
   });
 

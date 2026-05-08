@@ -76,6 +76,7 @@ export default function PendingExpenseReview({ open, onClose }: PendingExpenseRe
           {
             date: toIsoDate(restored.date),
             amount: restored.amount,
+            spentOn: restored.spentOn,
             category: restored.category,
             description: restored.description,
           },
@@ -195,6 +196,7 @@ export default function PendingExpenseReview({ open, onClose }: PendingExpenseRe
               initialValues={{
                 date: toIsoDate(editing.date),
                 amount: editing.amount,
+                spentOn: editing.spentOn,
                 category: editing.category,
                 description: editing.description,
               }}
@@ -258,11 +260,12 @@ function PendingItem({
         <Typography variant="caption" color="text.secondary" component="div" sx={{ mb: 1 }}>
           {formatDateLong(expense.date)}
         </Typography>
-        <Chip
-          label={expense.category || 'Uncategorized'}
-          size="small"
-          variant="outlined"
-        />
+        <Typography variant="subtitle2" sx={{ mb: 0.25 }}>
+          {expense.spentOn || 'Unknown'}
+        </Typography>
+        <Typography variant="caption" color="text.secondary" component="div">
+          {expense.category || 'Uncategorized'}
+        </Typography>
       </CardContent>
       <CardActions sx={{ justifyContent: 'flex-end' }}>
         <Button startIcon={<EditIcon />} size="small" onClick={onEdit}>

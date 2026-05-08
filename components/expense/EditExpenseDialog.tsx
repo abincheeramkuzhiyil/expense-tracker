@@ -5,6 +5,7 @@ import StandardBottomSheet from '@/components/common/StandardBottomSheet';
 import AddExpenseForm, { ExpenseFormData } from '@/components/expense/AddExpenseForm';
 import { Expense } from '@/types/expense.types';
 import { formatDateForInput } from '@/utils/dateFormatter';
+import Box from '@mui/material/Box';
 
 interface EditExpenseDialogProps {
   expense: Expense | null;
@@ -21,6 +22,7 @@ export default function EditExpenseDialog({
 
   const initialValues: Partial<ExpenseFormData> = {
     date: formatDateForInput(expense.date),
+    spentOn: expense.spentOn,
     category: expense.category,
     amount: expense.amount,
     description: expense.description,
@@ -33,14 +35,16 @@ export default function EditExpenseDialog({
       title="Edit Expense"
       icon={<EditIcon fontSize="small" sx={{ color: 'primary.contrastText' }} />}
     >
-      <AddExpenseForm
-        defaultDate={expense.date}
-        viewMode="day"
-        initialValues={initialValues}
-        saveLabel="Save Changes"
-        onSave={onSave}
-        onCancel={onCancel}
-      />
+      <Box sx={{ p: 2 }}>
+        <AddExpenseForm
+          defaultDate={expense.date}
+          viewMode="day"
+          initialValues={initialValues}
+          saveLabel="Save Changes"
+          onSave={onSave}
+          onCancel={onCancel}
+        />
+      </Box>
     </StandardBottomSheet>
   );
 }

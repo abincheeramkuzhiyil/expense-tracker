@@ -10,13 +10,23 @@ import {
   Alert,
   Grid,
   Chip,
+  Switch,
+  FormControlLabel,
+  Typography,
   useTheme,
   useMediaQuery,
 } from '@mui/material';
 import SmsIcon from '@mui/icons-material/Sms';
+import CategoryIcon from '@mui/icons-material/Category';
+import DrawerField from '@/components/common/DrawerField';
 import { ExpenseSource, ViewMode } from '@/types/expense.types';
-import { getCategories } from '@/utils/expenseCategories';
+import { getCategories, addNewCategory } from '@/utils/expenseCategories';
 import { formatDateForInput } from '@/utils/dateFormatter';
+import {
+  getSpentOnSuggestions,
+  resolveCategory,
+  setSpentOnCategory,
+} from '@/utils/spentOnMapping';
 
 interface AddExpenseFormProps {
   defaultDate: Date;
@@ -39,6 +49,9 @@ interface AddExpenseFormProps {
 
 export interface ExpenseFormData {
   date: string;
+  /** Specific item the money was spent on, e.g. "Breakfast", "Fuel" */
+  spentOn: string;
+  /** High-level group category, e.g. "Food", "Travel" */
   category: string;
   amount: number;
   description: string;
@@ -52,42 +65,78 @@ export default function AddExpenseForm({
   initialValues,
   source = 'manual',
   saveLabel = 'Save',
-  onSaveDraft,
+  onSaveDraft
 }: AddExpenseFormProps) {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-  const [categories, setCategories] = useState<string[]>(() => getCategories());
+
+  const [categoryGroups, setCategoryGroups] = useState<string[]>(() => getCategories());
+  const [spentOnSuggestions, setSpentOnSuggestions] = useState<string[]>(() =>
+    getSpentOnSuggestions()
+  );
+
   const [formData, setFormData] = useState<ExpenseFormData>({
     date: initialValues?.date ?? formatDateForInput(defaultDate),
+    spentOn: initialValues?.spentOn ?? '',
     category: initialValues?.category ?? '',
     amount: initialValues?.amount ?? 0,
     description: initialValues?.description ?? '',
   });
+
   const [errors, setErrors] = useState<{
     date?: string;
+    spentOn?: string;
     category?: string;
     amount?: string;
   }>({});
-  const [isNewCategory, setIsNewCategory] = useState(false);
 
-  // Check if the entered category is new
+  // true when the current spentOn value has no entry in the mapping
+  const [isNewSpentOn, setIsNewSpentOn] = useState(false);
+  // true when the current category group is not in the saved groups list
+  const [isNewCategoryGroup, setIsNewCategoryGroup] = useState(false);
+  // true when the user has manually set the category via the drawer
+  const [categoryManuallySet, setCategoryManuallySet] = useState(false);
+
+  // Category drawer state
+  const [categoryDrawerOpen, setCategoryDrawerOpen] = useState(false);
+  const [draftCategory, setDraftCategory] = useState('');
+  const [draftPrefillMapping, setDraftPrefillMapping] = useState(true);
+  const [prefillMapping, setPrefillMapping] = useState(true);
+
   useEffect(() => {
-    if (formData.category) {
-      const exists = categories.some(
-        (cat) => cat.toLowerCase() === formData.category.toLowerCase()
-      );
-      setIsNewCategory(!exists);
+    if (formData.spentOn.trim()) {
+      const resolved = resolveCategory(formData.spentOn);
+      setIsNewSpentOn(resolved === null);
+
+      // Auto-fill category when the mapping resolves and user hasn't manually chosen one
+      if (resolved && !categoryManuallySet) {
+        setFormData((prev) => ({ ...prev, category: resolved }));
+      }
     } else {
-      setIsNewCategory(false);
+      setIsNewSpentOn(false);
     }
-  }, [formData.category, categories]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [formData.spentOn]);
+
+  useEffect(() => {
+    if (formData.category.trim()) {
+      const exists = categoryGroups.some(
+        (g) => g.toLowerCase() === formData.category.trim().toLowerCase()
+      );
+      setIsNewCategoryGroup(!exists);
+    } else {
+      setIsNewCategoryGroup(false);
+    }
+  }, [formData.category, categoryGroups]);
+
+  // Tracks whether the draft category in the drawer is a new (unsaved) group
+  const isDraftNewCategory =
+    draftCategory.trim().length > 0 &&
+    !categoryGroups.some((g) => g.toLowerCase() === draftCategory.trim().toLowerCase());
 
   function getDateFieldNote(): string | null {
-    if (viewMode === 'month') {
-      return 'Date defaulted to first day of the month';
-    } else if (viewMode === 'year') {
-      return 'Date defaulted to first day of the year';
-    }
+    if (viewMode === 'month') return 'Date defaulted to first day of the month';
+    if (viewMode === 'year') return 'Date defaulted to first day of the year';
     return null;
   }
 
@@ -97,11 +146,12 @@ export default function AddExpenseForm({
     if (!formData.date) {
       newErrors.date = 'Date is required';
     }
-
-    if (!formData.category || !formData.category.trim()) {
+    if (!formData.spentOn.trim()) {
+      newErrors.spentOn = 'Spent On is required';
+    }
+    if (!formData.category.trim()) {
       newErrors.category = 'Category is required';
     }
-
     if (!formData.amount || formData.amount <= 0) {
       newErrors.amount = 'Amount must be greater than 0';
     }
@@ -110,10 +160,24 @@ export default function AddExpenseForm({
     return Object.keys(newErrors).length === 0;
   }
 
+  function persistMappingAndCategories() {
+    // Save the Spent On → Category mapping only when user opted in
+    if (prefillMapping) {
+      setSpentOnCategory(formData.spentOn, formData.category);
+    }
+    // Persist a new category group if needed
+    if (isNewCategoryGroup) {
+      addNewCategory(formData.category);
+      setCategoryGroups(getCategories());
+    }
+    // Refresh Spent On suggestions in case a new entry was added
+    setSpentOnSuggestions(getSpentOnSuggestions());
+  }
+
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-
     if (validate()) {
+      persistMappingAndCategories();
       onSave(formData);
     }
   }
@@ -121,6 +185,7 @@ export default function AddExpenseForm({
   function handleSaveDraft(e: React.MouseEvent) {
     e.preventDefault();
     if (validate()) {
+      persistMappingAndCategories();
       onSaveDraft!(formData);
     }
   }
@@ -131,6 +196,26 @@ export default function AddExpenseForm({
     if (value === '' || /^\d*\.?\d{0,2}$/.test(value)) {
       setFormData({ ...formData, amount: value === '' ? 0 : parseFloat(value) });
     }
+  }
+
+  function handleOpenCategoryDrawer() {
+    setDraftCategory(formData.category);
+    setDraftPrefillMapping(prefillMapping);
+    setCategoryDrawerOpen(true);
+  }
+
+  function handleCategoryDrawerClose() {
+    // Discard draft — formData.category and prefillMapping unchanged
+    setCategoryDrawerOpen(false);
+  }
+
+  function handleCategoryDrawerConfirm() {
+    setFormData((prev) => ({ ...prev, category: draftCategory }));
+    setPrefillMapping(draftPrefillMapping);
+    if (draftCategory.trim()) {
+      setCategoryManuallySet(true);
+    }
+    setCategoryDrawerOpen(false);
   }
 
   const dateNote = getDateFieldNote();
@@ -168,19 +253,23 @@ export default function AddExpenseForm({
               onChange={(e) => setFormData({ ...formData, date: e.target.value })}
               error={!!errors.date}
               helperText={errors.date}
-              InputLabelProps={{
-                shrink: true,
-              }}
+              InputLabelProps={{ shrink: true }}
             />
           </Grid>
 
+          {/* ── Spent On ─────────────────────────────────────────────────── */}
           <Grid item xs={12}>
             <Autocomplete
               freeSolo
-              options={categories}
-              value={formData.category}
+              options={spentOnSuggestions}
+              value={formData.spentOn}
               onInputChange={(_, newValue) => {
-                setFormData({ ...formData, category: newValue });
+                setFormData((prev) => ({ ...prev, spentOn: newValue }));
+                setCategoryManuallySet(false);
+                // If user clears the field, also clear the category
+                if (!newValue.trim()) {
+                  setFormData((prev) => ({ ...prev, spentOn: newValue, category: '' }));
+                }
               }}
               renderInput={(params) => (
                 <TextField
@@ -188,19 +277,71 @@ export default function AddExpenseForm({
                   variant="filled"
                   fullWidth
                   required
-                  label="Category"
-                  error={!!errors.category}
-                  helperText={errors.category}
+                  label="Spent On"
+                  error={!!errors.spentOn}
+                  helperText={errors.spentOn}
                 />
               )}
             />
-            {isNewCategory && formData.category && (
+            {isNewSpentOn && formData.spentOn.trim() && (
               <Alert severity="info" sx={{ mt: 1 }}>
-                Note: This will be added as a new category on save of this expense
+                Note: This will be added as a new Spent On item
               </Alert>
             )}
           </Grid>
 
+          {/* ── Category (DrawerField) ───────────────────────────────────── */}
+          <Grid item xs={12}>
+            <DrawerField
+              label="Category"
+              value={formData.category}
+              placeholder="Tap to select category"
+              required
+              error={!!errors.category}
+              helperText={errors.category}
+              open={categoryDrawerOpen}
+              onOpen={handleOpenCategoryDrawer}
+              onClose={handleCategoryDrawerClose}
+              onConfirm={handleCategoryDrawerConfirm}
+              drawerTitle="Select Category"
+              drawerIcon={<CategoryIcon fontSize="small" sx={{ color: 'primary.contrastText' }} />}
+            >
+              <Autocomplete
+                freeSolo
+                options={categoryGroups}
+                value={draftCategory}
+                onInputChange={(_, newValue) => setDraftCategory(newValue)}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    variant="filled"
+                    fullWidth
+                    label="Category"
+                  />
+                )}
+              />
+              {isDraftNewCategory && (
+                <Alert severity="info" sx={{ mt: 1 }}>
+                  Note: This will be added as a new Category group
+                </Alert>
+              )}
+              <FormControlLabel
+                sx={{ mt: 2 }}
+                control={
+                  <Switch
+                    checked={draftPrefillMapping}
+                    onChange={(e) => setDraftPrefillMapping(e.target.checked)}
+                  />
+                }
+                label="Use this to prefill next time"
+              />
+              <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
+                When ON, Spent On → Category mapping is saved for future auto-fill
+              </Typography>
+            </DrawerField>
+          </Grid>
+
+          {/* ── Amount ───────────────────────────────────────────────────── */}
           <Grid item xs={12}>
             <TextField
               variant="filled"

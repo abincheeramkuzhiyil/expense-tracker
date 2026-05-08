@@ -106,6 +106,7 @@ export function saveExpense(
   const stored: StoredExpense = {
     id: uuidv4(),
     amount: formData.amount,
+    spentOn: formData.spentOn.trim(),
     category: formData.category.trim(),
     date: formData.date,
     description: formData.description,
@@ -119,6 +120,7 @@ export function saveExpense(
     const pendingItem: PendingStoredExpense = {
       id: stored.id,
       amount: stored.amount,
+      spentOn: stored.spentOn,
       category: stored.category,
       date: stored.date,
       description: stored.description,
@@ -224,6 +226,7 @@ export function approveExpense(id: string): void {
   const stored: StoredExpense = {
     id: item.id,
     amount: item.amount,
+    spentOn: item.spentOn,
     category: item.category,
     date: item.date,
     description: item.description,
@@ -267,6 +270,7 @@ export function approveAllPending(): number {
     const stored: StoredExpense = {
       id: item.id,
       amount: item.amount,
+      spentOn: item.spentOn,
       category: item.category,
       date: item.date,
       description: item.description,
@@ -359,6 +363,7 @@ export function updateExpense(
     if (formData.date === dateBeforeEdit) {
       // Date unchanged — update in-place
       existing.amount = formData.amount;
+      existing.spentOn = formData.spentOn.trim();
       existing.category = formData.category.trim();
       existing.description = formData.description;
       existing.updatedAt = now;
@@ -378,6 +383,7 @@ export function updateExpense(
       const updated: StoredExpense = {
         ...existing,
         amount: formData.amount,
+        spentOn: formData.spentOn.trim(),
         category: formData.category.trim(),
         date: formData.date,
         description: formData.description,
@@ -445,6 +451,7 @@ export function seedExpenseToStorage(expense: Expense): void {
     const pendingItem: PendingStoredExpense = {
       id: expense.id,
       amount: expense.amount,
+      spentOn: expense.spentOn,
       category: expense.category,
       date: dateStr,
       description: expense.description,
@@ -463,6 +470,7 @@ export function seedExpenseToStorage(expense: Expense): void {
   const stored: StoredExpense = {
     id: expense.id,
     amount: expense.amount,
+    spentOn: expense.spentOn,
     category: expense.category,
     date: dateStr,
     description: expense.description,
