@@ -24,12 +24,17 @@ const withPWA = require('next-pwa')({
   ],
 });
 
+// basePath and assetPrefix are only applied in production builds (npm run build).
+// In development and test (npm run dev), the app is served at the root so that
+// Playwright's baseURL of http://localhost:3000 works correctly.
+const isProd = process.env.NODE_ENV === 'production';
+
 const nextConfig = {
   reactStrictMode: true,
   turbopack: {},
   output: 'export',
-  basePath: '/expense-tracker',
-  assetPrefix: '/expense-tracker/',
+  basePath: isProd ? '/expense-tracker' : '',
+  assetPrefix: isProd ? '/expense-tracker/' : '',
   images: {
     unoptimized: true,
   },

@@ -15,10 +15,10 @@ export class ExpensesPage {
 
   constructor(page: Page) {
     this.page = page;
-    this.viewModeSelect = page.getByRole('combobox', { name: /view mode/i });
-    this.prevButton = page.getByRole('button', { name: /previous/i });
-    this.nextButton = page.getByRole('button', { name: /next/i });
-    this.todayButton = page.getByRole('button', { name: /today/i });
+    this.viewModeSelect = page.getByRole('combobox', { name: /^view$/i });
+    this.prevButton = page.getByRole('button', { name: 'Previous' });
+    this.nextButton = page.getByRole('button', { name: 'Next' });
+    this.todayButton = page.getByRole('button', { name: 'Today' });
     this.addFab = page.getByRole('button', { name: /add/i }).last(); // FAB is usually last
     this.totalDisplay = page.getByText(/Total:/i);
     this.expenseList = page.getByRole('list').first();
@@ -78,9 +78,10 @@ export class ExpensesPage {
    * Get the number of expense items displayed
    */
   async getExpenseCount(): Promise<number> {
-    const items = await this.page.getByRole('button', { name: /₹/i }).all();
-    // Filter out header and footer rows
-    return items.length > 2 ? items.length - 2 : 0;
+    // Expense accordions have expandIcon (.MuiAccordionSummary-expandIconWrapper)
+    // Header and footer accordions don't have expand icons (pointerEvents: none)
+    const items = await this.page.locator('.MuiAccordion-root').filter({ has: this.page.locator('.MuiAccordionSummary-expandIconWrapper') }).all();
+    return items.length;
   }
 
   /**
@@ -189,5 +190,32 @@ export class ExpensesPage {
    */
   async cancelDelete(): Promise<void> {
     await this.page.getByRole('button', { name: 'Cancel delete' }).click();
+  }
+
+  // ─── Pending review banner helpers ────────────────────────────────────────
+
+  /** The informational alert banner shown when there are pending expenses. */
+  get pendingBanner(): import('@playwright/test').Locator {
+    return this.page.getByRole('alert').filter({ hasText: /to review and approve/i });
+  }
+
+  /** "Review" button inside the pending banner. */
+  get pendingBannerReviewButton(): import('@playwright/test').Locator {
+    return this.pendingBanner.getByRole('button', { name: /review/i });
+  }
+
+  /** Dismiss (✕) button inside the pending banner. */
+  get pendingBannerDismissButton(): import('@playwright/test').Locator {
+    return this.page.getByRole('button', { name: /dismiss banner/i });
+  }
+
+  /** Opens the pending review modal via the banner "Review" button. */
+  async openPendingReview(): Promise<void> {
+    await this.pendingBannerReviewButton.click();
+  }
+
+  /** Dismisses the pending banner via the ✕ button. */
+  async dismissPendingBanner(): Promise<void> {
+    await this.pendingBannerDismissButton.click();
   }
 }

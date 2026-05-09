@@ -12,20 +12,19 @@ export class NavigationDrawer {
 
   constructor(page: Page) {
     this.page = page;
-    this.menuButton = page.getByRole('button', { name: /menu/i });
-    this.drawer = page.getByRole('navigation');
-    this.homeLink = page.getByRole('link', { name: /home/i });
-    this.expensesLink = page.getByRole('link', { name: /expenses/i });
+    this.menuButton = page.getByRole('button', { name: /open drawer/i });
+    this.drawer = page.locator('.MuiDrawer-paper');
+    this.homeLink = page.getByRole('button', { name: /home/i });
+    this.expensesLink = page.getByRole('button', { name: /expenses/i });
   }
 
   /**
    * Open the navigation drawer (on mobile)
    */
   async open(): Promise<void> {
-    if (await this.menuButton.isVisible()) {
-      await this.menuButton.click();
-      await this.drawer.waitFor({ state: 'visible' });
-    }
+    await this.menuButton.click();
+    // Wait for MUI Drawer paper to animate open
+    await this.page.locator('.MuiDrawer-paper').waitFor({ state: 'visible' });
   }
 
   /**

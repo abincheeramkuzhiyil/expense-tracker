@@ -4,7 +4,8 @@ import { Expense } from '../../types/expense.types';
 const PENDING_STORAGE_KEY = 'expensesPending';
 
 /**
- * Seeds localStorage with expense data in the browser context
+ * Seeds localStorage with expense data in the browser context.
+ * Stores expenses in the year/month bucket format used by expenseStorage.ts.
  */
 export async function seedLocalStorage(
   page: Page,
@@ -12,13 +13,39 @@ export async function seedLocalStorage(
   categories: string[] = []
 ): Promise<void> {
   await page.addInitScript((data) => {
+    const YEAR_INDEX_KEY = 'expenseYearIndex';
     if (data.expenses.length > 0) {
-      localStorage.setItem('expenses', JSON.stringify(data.expenses));
+      // Group by year then month (matching the expenseStorage.ts format)
+      const yearMap: Record<string, Record<string, any[]>> = {};
+      for (const e of data.expenses) {
+        // date may be a Date or string; normalize to "YYYY-MM-DD"
+        const dateStr = typeof e.date === 'string' ? e.date : new Date(e.date).toISOString().split('T')[0];
+        const [year, monthStr] = dateStr.split('-');
+        const month = String(Number(monthStr)); // remove leading zero
+        if (!yearMap[year]) yearMap[year] = {};
+        if (!yearMap[year][month]) yearMap[year][month] = [];
+        yearMap[year][month].push({
+          id: e.id,
+          amount: e.amount,
+          spentOn: e.spentOn,
+          category: e.category,
+          date: dateStr,
+          description: e.description,
+          source: e.source,
+          createdAt: typeof e.createdAt === 'string' ? e.createdAt : new Date(e.createdAt).toISOString(),
+          updatedAt: typeof e.updatedAt === 'string' ? e.updatedAt : new Date(e.updatedAt).toISOString(),
+        });
+      }
+      const years = Object.keys(yearMap).sort();
+      localStorage.setItem(YEAR_INDEX_KEY, JSON.stringify(years));
+      for (const year of years) {
+        localStorage.setItem(year, JSON.stringify(yearMap[year]));
+      }
     }
     if (data.categories.length > 0) {
       localStorage.setItem('expenseCategories', JSON.stringify(data.categories));
     }
-  }, { expenses, categories });
+  }, { expenses: expenses as any[], categories });
 }
 
 /**
@@ -51,10 +78,12 @@ export async function seedPendingExpenses(
 }
 
 /**
- * Clears all localStorage data in the browser context
+ * Clears all localStorage data before the next page load.
+ * Uses addInitScript so it executes before any navigation, avoiding the
+ * SecurityError that page.evaluate() throws on about:blank.
  */
 export async function clearLocalStorage(page: Page): Promise<void> {
-  await page.evaluate(() => {
+  await page.addInitScript(() => {
     localStorage.clear();
   });
 }
@@ -67,6 +96,53 @@ export async function getLocalStorageItem(page: Page, key: string): Promise<any>
     const item = localStorage.getItem(storageKey);
     return item ? JSON.parse(item) : null;
   }, key);
+}
+
+/**
+ * Seeds pending expenses directly into the expensesPending localStorage key.
+ * Accepts a simpler flat format (date as "YYYY-MM-DD" string) to avoid Date serialisation issues.
+ */
+export async function seedPendingItems(
+  page: Page,
+  items: Array<{
+    id: string;
+    amount: number;
+    spentOn: string;
+    category: string;
+    date: string; // "YYYY-MM-DD"
+    description: string;
+    source: string;
+    createdAt: string; // ISO string
+    updatedAt: string; // ISO string
+  }>
+): Promise<void> {
+  await page.addInitScript((data) => {
+    localStorage.setItem('expensesPending', JSON.stringify(data));
+  }, items);
+}
+
+/**
+ * Seeds app settings into the appSettings localStorage key.
+ * Pass a partial settings object; omitted fields fall back to defaults.
+ */
+export async function seedSettings(
+  page: Page,
+  settings: {
+    parserRules?: Array<{
+      id: string;
+      bankName: string;
+      amountKeyword: string;
+      merchantKeyword: string;
+      builtIn?: boolean;
+      overrideOf?: string;
+    }>;
+    notificationEnabled?: boolean;
+    notificationTime?: string;
+  }
+): Promise<void> {
+  await page.addInitScript((data) => {
+    localStorage.setItem('appSettings', JSON.stringify(data));
+  }, settings);
 }
 
 /**

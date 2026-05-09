@@ -11,7 +11,7 @@ export class HomePage {
   constructor(page: Page) {
     this.page = page;
     this.greeting = page.getByText('Hello User!');
-    this.menuButton = page.getByRole('button', { name: /menu/i });
+    this.menuButton = page.getByRole('button', { name: /open drawer/i });
   }
 
   /**
@@ -32,10 +32,10 @@ export class HomePage {
    * Navigate to Expenses page via drawer
    */
   async navigateToExpenses(): Promise<void> {
-    // Open drawer on mobile
-    if (await this.menuButton.isVisible()) {
-      await this.menuButton.click();
-    }
-    await this.page.getByRole('link', { name: /expenses/i }).click();
+    // Open drawer
+    await this.menuButton.click();
+    // Wait for the MUI Drawer paper to be visible
+    await this.page.locator('.MuiDrawer-paper').waitFor({ state: 'visible' });
+    await this.page.getByRole('button', { name: /expenses/i }).click();
   }
 }

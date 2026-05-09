@@ -21,13 +21,13 @@ export class AddExpensePage {
     this.backButton = page.getByRole('button', { name: /back/i }).first();
     this.pageTitle = page.getByRole('heading', { name: /add expense/i });
     this.dateField = page.getByLabel(/date/i);
-    this.spentOnField = page.getByLabel(/spent on/i);
+    this.spentOnField = page.getByRole('combobox', { name: /spent on/i });
     this.categoryGroupField = page.getByLabel(/^category$/i);
     this.amountField = page.getByLabel(/amount/i);
     this.descriptionField = page.getByLabel(/description/i);
-    this.saveButton = page.getByRole('button', { name: /save/i });
+    this.saveButton = page.getByRole('button', { name: 'Save', exact: true });
     this.cancelButton = page.getByRole('button', { name: /cancel/i });
-    this.infoAlert = page.getByRole('alert');
+    this.infoAlert = page.getByRole('alert').filter({ hasText: /note|date/i });
   }
 
   /**

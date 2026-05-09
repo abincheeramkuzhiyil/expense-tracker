@@ -81,7 +81,7 @@ export default function DateNavigation({
     <Paper elevation={1} sx={{ position: 'sticky', top: { xs: '56px', sm: '64px' }, zIndex: (theme) => theme.zIndex.appBar - 1 }}>
       <Grid container alignItems="center" justifyContent="space-between" sx={{ py: 1.5, px: 1 }}>
         <Grid item>
-          <IconButton onClick={handlePrevious}>
+          <IconButton onClick={handlePrevious} aria-label="Previous">
             <KeyboardArrowLeftIcon sx={{ fontSize: '2rem' }} />
           </IconButton>
         </Grid>
@@ -97,12 +97,12 @@ export default function DateNavigation({
         <Grid item>
           <Grid container>
             <Grid item>
-              <IconButton onClick={handleNext}>
+              <IconButton onClick={handleNext} aria-label="Next">
                 <KeyboardArrowRightIcon sx={{ fontSize: '2rem' }} />
               </IconButton>
             </Grid>
             <Grid item>
-              <IconButton onClick={handleToday} disabled={isToday()}>
+              <IconButton onClick={handleToday} disabled={isToday()} aria-label="Today">
                 <TodayIcon sx={{ fontSize: '2rem' }} />
               </IconButton>
             </Grid>

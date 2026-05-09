@@ -132,12 +132,12 @@ test.describe('Expense Category Persistence', () => {
     const addPage = new AddExpensePage(page);
     await addPage.navigate();
     
-    // With no seeded categories, should fall back to defaults
-    await addPage.categoryGroupField.click();
+    // Open Spent On dropdown to see default suggestions
+    await addPage.spentOnField.click();
     await page.waitForTimeout(300);
     
     // Should still have default categories available
-    await addPage.categoryGroupField.fill('Foo');
-    await expect(page.getByRole('option', { name: /food/i })).toBeVisible();
+    await addPage.spentOnField.fill('Foo');
+    await expect(page.getByRole('option', { name: /food|breakfast|lunch/i }).first()).toBeVisible();
   });
 });

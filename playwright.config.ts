@@ -43,7 +43,7 @@ export default defineConfig({
     command: 'npm run dev',
     url: 'http://localhost:3000',
     reuseExistingServer: !process.env.CI,
-    timeout: 60 * 1000, // 60 seconds
+    timeout: 120 * 1000, // 120 seconds — safety buffer for first-time Turbopack compile
   },
   
   /* Test timeout */

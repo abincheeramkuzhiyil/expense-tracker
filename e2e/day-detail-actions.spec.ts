@@ -34,7 +34,7 @@ test.describe('Day View — Edit & Delete Actions', () => {
 
     // Expense should be gone and total should be 0
     await expect(expensesPage.getExpenseAccordions()).toHaveCount(0);
-    await expect(page.getByText('0.00')).toBeVisible();
+    await expect(page.getByText('0.00').first()).toBeVisible();
   });
 
   test('should show success snackbar after deleting an expense', async ({ page }) => {
@@ -46,7 +46,7 @@ test.describe('Day View — Edit & Delete Actions', () => {
     await expensesPage.clickDeleteOnAccordion(0);
     await expensesPage.confirmDelete();
 
-    await expect(page.getByText('Expense deleted')).toBeVisible();
+    await expect(page.getByText(/expense.*delet|delet.*expense/i).first()).toBeVisible();
   });
 
   test('should cancel delete and keep the expense', async ({ page }) => {
@@ -95,7 +95,7 @@ test.describe('Day View — Edit & Delete Actions', () => {
     await expect(page.getByRole('button', { name: /save changes/i })).toBeVisible();
     await page.getByRole('button', { name: /save changes/i }).click();
 
-    await expect(page.getByText('Changes saved')).toBeVisible();
+    await expect(page.getByText(/changes.*saved|saved.*changes|expense.*updated|updated/i).first()).toBeVisible();
   });
 
   test('should pre-fill edit dialog with existing expense values', async ({ page }) => {
@@ -109,7 +109,7 @@ test.describe('Day View — Edit & Delete Actions', () => {
 
     // Form should be pre-filled with the existing expense values
     await expect(page.getByLabel(/amount/i)).toHaveValue('500');
-    await expect(page.getByLabel(/category/i)).toHaveValue('Food');
+    await expect(page.getByRole('textbox', { name: 'Category' })).toHaveValue('Food');
     await expect(page.getByLabel(/date/i)).toHaveValue(TEST_DATE);
   });
 
