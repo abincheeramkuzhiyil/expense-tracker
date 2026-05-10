@@ -404,6 +404,11 @@ export function updateExpense(
   }
 }
 
+/** Clears the in-memory year cache. Call this after directly writing year data to localStorage. */
+export function clearYearCache(): void {
+  yearCache.clear();
+}
+
 /**
  * Clears all expense data and resets the in-memory cache.
  * Used by the seeder utility.
