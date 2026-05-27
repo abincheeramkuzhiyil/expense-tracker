@@ -20,6 +20,7 @@ import HomeIcon from '@mui/icons-material/Home';
 import ReceiptIcon from '@mui/icons-material/Receipt';
 import SettingsIcon from '@mui/icons-material/Settings';
 import UploadFileIcon from '@mui/icons-material/UploadFile';
+import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import { usePathname, useRouter } from 'next/navigation';
 
 const drawerWidth = 240;
@@ -29,6 +30,7 @@ const menuItems = [
   { text: 'Expenses', icon: <ReceiptIcon />, path: '/expenses' },
   { text: 'Settings', icon: <SettingsIcon />, path: '/settings' },
   { text: 'Import Data', icon: <UploadFileIcon />, path: '/import' },
+  { text: 'Export Data', icon: <FileDownloadIcon />, path: '/export' },
 ];
 
 export default function Navigation() {
