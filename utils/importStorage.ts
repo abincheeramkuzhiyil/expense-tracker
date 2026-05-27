@@ -120,8 +120,12 @@ function importUserPreferences(value: unknown): ImportKeyResult {
 function importSpentOnMapping(value: unknown): ImportKeyResult {
   try {
     const incoming = value as Record<string, string>;
+    // Normalize incoming keys to lowercase+trimmed to prevent mixed-case duplicates
+    const normalizedIncoming = Object.fromEntries(
+      Object.entries(incoming).map(([k, v]) => [k.trim().toLowerCase(), v])
+    );
     const existing = getSpentOnMapping();
-    const merged = { ...existing, ...incoming }; // incoming wins on conflict
+    const merged = { ...existing, ...normalizedIncoming }; // incoming wins on conflict
     saveSpentOnMapping(merged);
     return { key: 'spentOnCategoryMapping', status: 'success', recordsImported: Object.keys(incoming).length, recordsFailed: 0 };
   } catch (e) {

@@ -57,8 +57,12 @@ export function getSpentOnMapping(): Record<string, string> {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return { ...DEFAULT_MAPPING };
     const stored: Record<string, string> = JSON.parse(raw);
+    // Normalize stored keys to lowercase+trimmed to eliminate case-variant duplicates
+    const normalizedStored = Object.fromEntries(
+      Object.entries(stored).map(([k, v]) => [k.trim().toLowerCase(), v])
+    );
     // Merge: stored values win over defaults
-    return { ...DEFAULT_MAPPING, ...stored };
+    return { ...DEFAULT_MAPPING, ...normalizedStored };
   } catch {
     return { ...DEFAULT_MAPPING };
   }
@@ -103,7 +107,9 @@ export function setSpentOnCategory(spentOn: string, category: string): void {
  */
 export function getSpentOnSuggestions(): string[] {
   const mapping = getSpentOnMapping();
-  return Object.keys(mapping)
-    .map((key) => key.charAt(0).toUpperCase() + key.slice(1))
-    .sort((a, b) => a.localeCompare(b));
+  return [...new Set(
+    Object.keys(mapping)
+      .map((key) => key.charAt(0).toUpperCase() + key.slice(1))
+      .sort((a, b) => a.localeCompare(b))
+  )];
 }
