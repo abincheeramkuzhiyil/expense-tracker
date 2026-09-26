@@ -81,14 +81,20 @@ interface SelectedSubCategory {
   spentOn: string;
 }
 
-// Keep accordions flush and white so the grey page background does not show through gaps.
+// Rows sit flush and white while collapsed; an expanded row lifts out with a margin and
+// shadow so its detail area is clearly separated from the neighbouring rows (like the Day view).
 const flushAccordionSx = {
   backgroundColor: 'background.paper',
   boxShadow: 'none',
   borderBottom: '1px solid',
   borderColor: 'divider',
   '&:before': { display: 'none' },
-  '&.Mui-expanded': { margin: 0 },
+  '&.Mui-expanded': {
+    margin: '12px 0',
+    borderBottom: 'none',
+    borderRadius: 1,
+    boxShadow: 3,
+  },
 } as const;
 
 export default function ComparePeriodsReport() {
@@ -172,32 +178,42 @@ export default function ComparePeriodsReport() {
             </Grid>
           </Paper>
 
-          {/* Header */}
-          <Accordion disableGutters sx={{ ...flushAccordionSx, pointerEvents: 'none' }}>
-            <AccordionSummary>
-              <Typography sx={{ flexGrow: 1, fontWeight: 'bold' }}>Category</Typography>
-              <Typography sx={{ mr: 2, minWidth: 70, textAlign: 'right', fontWeight: 'bold' }}>
-                {formatPeriodLabel(periodA)}
-              </Typography>
-              <Typography sx={{ mr: 2, minWidth: 70, textAlign: 'right', fontWeight: 'bold' }}>
-                {formatPeriodLabel(periodB)}
-              </Typography>
-              <Typography sx={{ fontWeight: 'bold' }}>Change</Typography>
-            </AccordionSummary>
-          </Accordion>
-
           {result.categories.map((cat) => (
             <Accordion key={cat.category} disableGutters sx={flushAccordionSx}>
-              <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                <Typography sx={{ flexGrow: 1 }}>{cat.category}</Typography>
-                <Typography sx={{ mr: 2, minWidth: 70, textAlign: 'right' }}>{cat.totalA.toFixed(2)}</Typography>
-                <Typography sx={{ mr: 2, minWidth: 70, textAlign: 'right' }} color="text.secondary">
-                  {cat.totalB.toFixed(2)}
-                </Typography>
-                <ChangeIndicator changePercent={cat.changePercent} />
+              <AccordionSummary
+                expandIcon={<ExpandMoreIcon />}
+                sx={{ '& .MuiAccordionSummary-content': { my: 1 } }}
+              >
+                <Box sx={{ width: '100%', minWidth: 0 }}>
+                  <Typography sx={{ wordBreak: 'break-word', fontWeight: 500, mb: 0.5 }}>
+                    {cat.category}
+                  </Typography>
+                  <Box sx={{ display: 'flex', alignItems: 'flex-end', gap: 1 }}>
+                    <Box sx={{ flex: 1, minWidth: 0 }}>
+                      <Typography variant="caption" color="text.secondary" noWrap display="block">
+                        {formatPeriodLabel(periodA)}
+                      </Typography>
+                      <Typography variant="body2">{cat.totalA.toFixed(2)}</Typography>
+                    </Box>
+                    <Box sx={{ flex: 1, minWidth: 0 }}>
+                      <Typography variant="caption" color="text.secondary" noWrap display="block">
+                        {formatPeriodLabel(periodB)}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        {cat.totalB.toFixed(2)}
+                      </Typography>
+                    </Box>
+                    <Box sx={{ flex: 1, minWidth: 0, textAlign: 'right' }}>
+                      <Typography variant="caption" color="text.secondary" display="block">
+                        Change
+                      </Typography>
+                      <ChangeIndicator changePercent={cat.changePercent} />
+                    </Box>
+                  </Box>
+                </Box>
               </AccordionSummary>
-              <AccordionDetails sx={{ p: 0 }}>
-                <TableContainer component={Paper} elevation={0}>
+              <AccordionDetails sx={{ p: 0, backgroundColor: 'grey.50' }}>
+                <TableContainer component={Paper} elevation={0} sx={{ backgroundColor: 'transparent' }}>
                   <Table size="small">
                     <TableBody>
                       {cat.subCategories.map((sub) => (
