@@ -94,8 +94,12 @@ export default function AddExpenseForm({
   const [isNewSpentOn, setIsNewSpentOn] = useState(false);
   // true when the current category group is not in the saved groups list
   const [isNewCategoryGroup, setIsNewCategoryGroup] = useState(false);
-  // true when the user has manually set the category via the drawer
-  const [categoryManuallySet, setCategoryManuallySet] = useState(false);
+  // true when the user has manually set the category via the drawer.
+  // Seeded true when a category is pre-filled (e.g. from a merchant rule) so the
+  // spentOn→category auto-resolve effect does not clobber the pre-filled value.
+  const [categoryManuallySet, setCategoryManuallySet] = useState(
+    () => Boolean(initialValues?.category)
+  );
 
   // Category drawer state
   const [categoryDrawerOpen, setCategoryDrawerOpen] = useState(false);

@@ -90,6 +90,38 @@ export interface ParsedSmsResult {
   matchedRuleId?: string;
 }
 
+// ─── Merchant Classification Rules ────────────────────────────────────────────
+
+/**
+ * A configurable rule that classifies a shared SMS into a Category + Spent On
+ * by matching merchant keyword(s) as a case-insensitive substring of the SMS text.
+ */
+export interface MerchantRule {
+  id: string;
+  /** Display name, e.g. "Food Delivery". */
+  label: string;
+  /** Case-insensitive substrings matched against the full SMS text (stored lowercase). */
+  keywords: string[];
+  /** Category to auto-fill; may be an existing or new category. */
+  category: string;
+  /** Optional Spent On value to auto-fill; often left blank since it varies per transaction. */
+  spentOn?: string;
+  /** When false, the rule is skipped during matching. Defaults to enabled. */
+  enabled?: boolean;
+  /** True only for rules hardcoded in source (BUILT_IN_MERCHANT_RULES). Cannot be deleted. */
+  builtIn?: boolean;
+  /** When set, this user rule overrides the built-in rule whose `id` matches this value. */
+  overrideOf?: string;
+}
+
+/** Result of matching an SMS against the merchant rules (first match wins). */
+export interface MerchantMatchResult {
+  category: string;
+  /** Present only when the matched rule defines a Spent On value. */
+  spentOn?: string;
+  matchedMerchantRuleId: string;
+}
+
 /** App-wide settings persisted in localStorage. */
 export interface AppSettings {
   parserRules: SmsParserRule[];

@@ -34,14 +34,20 @@ interface SelectedSubCategory {
   spentOn: string;
 }
 
-// Keep accordions flush and white so the grey page background does not show through gaps.
+// Rows sit flush and white while collapsed; an expanded row lifts out with a margin and
+// shadow so its detail area is clearly separated from the neighbouring rows (like the Day view).
 const flushAccordionSx = {
   backgroundColor: 'background.paper',
   boxShadow: 'none',
   borderBottom: '1px solid',
   borderColor: 'divider',
   '&:before': { display: 'none' },
-  '&.Mui-expanded': { margin: 0 },
+  '&.Mui-expanded': {
+    margin: '12px 0',
+    borderBottom: 'none',
+    borderRadius: 1,
+    boxShadow: 3,
+  },
 } as const;
 
 export default function CategoryBreakdownReport({ range, rangeControl }: CategoryBreakdownReportProps) {
@@ -121,7 +127,9 @@ export default function CategoryBreakdownReport({ range, rangeControl }: Categor
                   sx={{ '& .MuiAccordionSummary-content': { alignItems: 'center' } }}
                 >
                   <Box sx={{ flexGrow: 1, mr: 2, minWidth: 0 }}>
-                    <Typography noWrap>{cat.category}</Typography>
+                    <Typography sx={{ wordBreak: 'break-word', lineHeight: 1.2 }}>
+                      {cat.category}
+                    </Typography>
                     <Box sx={{ position: 'relative', mt: 0.5 }}>
                       <LinearProgress
                         variant="determinate"
@@ -149,8 +157,8 @@ export default function CategoryBreakdownReport({ range, rangeControl }: Categor
                     <Typography>Rs. {cat.total.toFixed(2)}</Typography>
                   </Box>
                 </AccordionSummary>
-                <AccordionDetails sx={{ p: 0 }}>
-                  <TableContainer component={Paper} elevation={0}>
+                <AccordionDetails sx={{ p: 0, backgroundColor: 'grey.50' }}>
+                  <TableContainer component={Paper} elevation={0} sx={{ backgroundColor: 'transparent' }}>
                     <Table size="small">
                       <TableBody>
                         {cat.subCategories.map((sub) => (

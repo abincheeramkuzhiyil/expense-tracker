@@ -22,9 +22,11 @@ import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import PaletteIcon from '@mui/icons-material/Palette';
 import SmsIcon from '@mui/icons-material/Sms';
+import LocalOfferIcon from '@mui/icons-material/LocalOffer';
 import NotificationsIcon from '@mui/icons-material/Notifications';
 import { useRouter } from 'next/navigation';
 import { useSettings } from '@/hooks/useSettings';
+import { useMerchantRules } from '@/hooks/useMerchantRules';
 
 interface SettingsItem {
   key: string;
@@ -45,6 +47,7 @@ interface SettingsSection {
 export default function SettingsPage() {
   const router = useRouter();
   const { settings, isLoaded } = useSettings();
+  const { rules: merchantRules, isLoaded: merchantLoaded } = useMerchantRules();
 
   const sections: SettingsSection[] = useMemo(() => {
     const userRuleCount = settings.parserRules.filter((r) => !r.builtIn).length;
@@ -53,6 +56,13 @@ export default function SettingsPage() {
       userRuleCount === 0
         ? `${totalRuleCount} built-in rules`
         : `${totalRuleCount} rules (${userRuleCount} custom)`;
+
+    const customMerchantCount = merchantRules.filter((r) => !r.builtIn && !r.overrideOf).length;
+    const totalMerchantCount = merchantRules.length;
+    const merchantSummary =
+      customMerchantCount === 0
+        ? `${totalMerchantCount} built-in rules`
+        : `${totalMerchantCount} rules (${customMerchantCount} custom)`;
 
     const notificationSummary = settings.notificationEnabled
       ? `Daily at ${formatTime(settings.notificationTime)}`
@@ -84,6 +94,14 @@ export default function SettingsPage() {
             href: '/settings/sms-parser',
           },
           {
+            key: 'merchant-mapping',
+            title: 'Merchant Rules',
+            summary: merchantSummary,
+            icon: <LocalOfferIcon />,
+            avatarColor: '#2e7d32',
+            href: '/settings/merchant-mapping',
+          },
+          {
             key: 'notifications',
             title: 'Notifications',
             summary: notificationSummary,
@@ -94,7 +112,7 @@ export default function SettingsPage() {
         ],
       },
     ];
-  }, [settings]);
+  }, [settings, merchantRules]);
 
   function handleBack() {
     router.back();
@@ -145,7 +163,7 @@ export default function SettingsPage() {
                         <ListItemText
                           primary={item.title}
                           secondary={
-                            isLoaded ? (
+                            isLoaded && merchantLoaded ? (
                               item.summary
                             ) : (
                               <Skeleton variant="text" width={120} />

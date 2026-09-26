@@ -21,6 +21,7 @@ import { ExpenseSource, ParsedSmsResult, ViewMode } from '@/types/expense.types'
 import { addNewCategory, getCategories } from '@/utils/expenseCategories';
 import { saveExpense } from '@/utils/expenseStorage';
 import { parseSms } from '@/utils/smsParser';
+import { getMerchantRules, matchMerchant } from '@/utils/merchantMapping';
 import { useSettings } from '@/hooks/useSettings';
 
 type ParseState =
@@ -41,6 +42,13 @@ function AddExpensePageContent() {
     if (!sharedText && !sharedTitle) return null;
     return [sharedTitle, sharedText].filter(Boolean).join(' ');
   }, [sharedText, sharedTitle]);
+
+  // Merchant classification runs independently of parserRules — it matches
+  // keywords against the full shared text to auto-fill Category and Spent On.
+  const merchantMatch = useMemo(() => {
+    if (!combinedSharedText) return null;
+    return matchMerchant(combinedSharedText, getMerchantRules());
+  }, [combinedSharedText]);
 
   const viewParam = searchParams.get('view') as ViewMode | null;
   const dateParam = searchParams.get('date');
@@ -132,6 +140,12 @@ function AddExpensePageContent() {
           date: parseState.result.date,
           amount: parseState.result.amount,
           description: parseState.result.description ?? '',
+          ...(merchantMatch
+            ? {
+                category: merchantMatch.category,
+                ...(merchantMatch.spentOn ? { spentOn: merchantMatch.spentOn } : {}),
+              }
+            : {}),
         }
       : undefined;
 
