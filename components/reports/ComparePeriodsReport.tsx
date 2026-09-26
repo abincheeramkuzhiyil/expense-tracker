@@ -6,13 +6,13 @@ import {
   AccordionDetails,
   AccordionSummary,
   Box,
+  Grid,
   IconButton,
   Paper,
   Table,
   TableBody,
   TableCell,
   TableContainer,
-  TableHead,
   TableRow,
   ToggleButton,
   ToggleButtonGroup,
@@ -81,6 +81,16 @@ interface SelectedSubCategory {
   spentOn: string;
 }
 
+// Keep accordions flush and white so the grey page background does not show through gaps.
+const flushAccordionSx = {
+  backgroundColor: 'background.paper',
+  boxShadow: 'none',
+  borderBottom: '1px solid',
+  borderColor: 'divider',
+  '&:before': { display: 'none' },
+  '&.Mui-expanded': { margin: 0 },
+} as const;
+
 export default function ComparePeriodsReport() {
   const years = getAvailableYears();
   const yearOptions = years.length > 0 ? years : [new Date().getFullYear()];
@@ -138,31 +148,46 @@ export default function ComparePeriodsReport() {
         </Typography>
       ) : (
         <>
-          <TableContainer component={Paper} elevation={0} sx={{ mb: 1 }}>
-            <Table size="small">
-              <TableHead>
-                <TableRow>
-                  <TableCell />
-                  <TableCell align="right">{formatPeriodLabel(periodA)}</TableCell>
-                  <TableCell align="right">{formatPeriodLabel(periodB)}</TableCell>
-                  <TableCell align="right">Change</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                <TableRow>
-                  <TableCell sx={{ fontWeight: 'bold' }}>Total</TableCell>
-                  <TableCell align="right" sx={{ fontWeight: 'bold' }}>{result.totalA.toFixed(2)}</TableCell>
-                  <TableCell align="right" sx={{ fontWeight: 'bold' }}>{result.totalB.toFixed(2)}</TableCell>
-                  <TableCell align="right">
-                    <ChangeIndicator changePercent={result.changePercent} />
-                  </TableCell>
-                </TableRow>
-              </TableBody>
-            </Table>
-          </TableContainer>
+          {/* Total summary card — mimics the navigation card above the Expenses table */}
+          <Paper elevation={1} sx={{ mb: 1 }}>
+            <Grid container alignItems="center" justifyContent="space-around" sx={{ py: 1.5, px: 1 }}>
+              <Grid item sx={{ textAlign: 'center' }}>
+                <Typography variant="caption" sx={{ fontWeight: 'bold', display: 'block' }}>
+                  {formatPeriodLabel(periodA)}
+                </Typography>
+                <Typography variant="body1">₹{result.totalA.toFixed(2)}</Typography>
+              </Grid>
+              <Grid item sx={{ textAlign: 'center' }}>
+                <Typography variant="caption" sx={{ fontWeight: 'bold', display: 'block' }}>
+                  {formatPeriodLabel(periodB)}
+                </Typography>
+                <Typography variant="body1">₹{result.totalB.toFixed(2)}</Typography>
+              </Grid>
+              <Grid item sx={{ textAlign: 'center' }}>
+                <Typography variant="caption" sx={{ fontWeight: 'bold', display: 'block' }}>
+                  Change
+                </Typography>
+                <ChangeIndicator changePercent={result.changePercent} />
+              </Grid>
+            </Grid>
+          </Paper>
+
+          {/* Header */}
+          <Accordion disableGutters sx={{ ...flushAccordionSx, pointerEvents: 'none' }}>
+            <AccordionSummary>
+              <Typography sx={{ flexGrow: 1, fontWeight: 'bold' }}>Category</Typography>
+              <Typography sx={{ mr: 2, minWidth: 70, textAlign: 'right', fontWeight: 'bold' }}>
+                {formatPeriodLabel(periodA)}
+              </Typography>
+              <Typography sx={{ mr: 2, minWidth: 70, textAlign: 'right', fontWeight: 'bold' }}>
+                {formatPeriodLabel(periodB)}
+              </Typography>
+              <Typography sx={{ fontWeight: 'bold' }}>Change</Typography>
+            </AccordionSummary>
+          </Accordion>
 
           {result.categories.map((cat) => (
-            <Accordion key={cat.category}>
+            <Accordion key={cat.category} disableGutters sx={flushAccordionSx}>
               <AccordionSummary expandIcon={<ExpandMoreIcon />}>
                 <Typography sx={{ flexGrow: 1 }}>{cat.category}</Typography>
                 <Typography sx={{ mr: 2, minWidth: 70, textAlign: 'right' }}>{cat.totalA.toFixed(2)}</Typography>
