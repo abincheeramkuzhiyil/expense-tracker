@@ -17,6 +17,7 @@ import {
 } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import AddExpenseForm, { ExpenseFormData } from '@/components/expense/AddExpenseForm';
+import PasteSmsPanel from '@/components/expense/PasteSmsPanel';
 import { ExpenseSource, ParsedSmsResult, ViewMode } from '@/types/expense.types';
 import { addNewCategory, getCategories } from '@/utils/expenseCategories';
 import { saveExpense } from '@/utils/expenseStorage';
@@ -38,17 +39,26 @@ function AddExpensePageContent() {
   // Web Share Target params (text is the SMS body, title may carry sender)
   const sharedText = searchParams.get('shared_text') ?? searchParams.get('text');
   const sharedTitle = searchParams.get('shared_title') ?? searchParams.get('title');
-  const combinedSharedText = useMemo(() => {
+
+  // Clipboard flow: launched from the "Add from clipboard" app shortcut. The SMS
+  // isn't in the URL — the user pastes it via PasteSmsPanel (one tap, since
+  // Android blocks silent clipboard reads). Both sources funnel into sourceText.
+  const isClipboardMode = searchParams.get('source') === 'clipboard';
+  const [clipboardText, setClipboardText] = useState<string | null>(null);
+  const [panelDismissed, setPanelDismissed] = useState(false);
+
+  const sourceText = useMemo(() => {
+    if (clipboardText) return clipboardText;
     if (!sharedText && !sharedTitle) return null;
     return [sharedTitle, sharedText].filter(Boolean).join(' ');
-  }, [sharedText, sharedTitle]);
+  }, [clipboardText, sharedText, sharedTitle]);
 
   // Merchant classification runs independently of parserRules — it matches
-  // keywords against the full shared text to auto-fill Category and Spent On.
+  // keywords against the full source text to auto-fill Category and Spent On.
   const merchantMatch = useMemo(() => {
-    if (!combinedSharedText) return null;
-    return matchMerchant(combinedSharedText, getMerchantRules());
-  }, [combinedSharedText]);
+    if (!sourceText) return null;
+    return matchMerchant(sourceText, getMerchantRules());
+  }, [sourceText]);
 
   const viewParam = searchParams.get('view') as ViewMode | null;
   const dateParam = searchParams.get('date');
@@ -59,12 +69,15 @@ function AddExpensePageContent() {
   const defaultDate = calculateDefaultDate(dateParam, viewMode);
 
   const [parseState, setParseState] = useState<ParseState>(
-    combinedSharedText ? { kind: 'loading' } : { kind: 'idle' }
+    sourceText ? { kind: 'loading' } : { kind: 'idle' }
   );
   const [draftSnackbarOpen, setDraftSnackbarOpen] = useState(false);
 
+  // Show the paste panel until the user supplies text or opts into manual entry.
+  const showPastePanel = isClipboardMode && !sourceText && !panelDismissed;
+
   useEffect(() => {
-    if (!combinedSharedText) {
+    if (!sourceText) {
       setParseState({ kind: 'idle' });
       return;
     }
@@ -72,9 +85,9 @@ function AddExpensePageContent() {
       setParseState({ kind: 'loading' });
       return;
     }
-    const result = parseSms(combinedSharedText, settings.parserRules);
+    const result = parseSms(sourceText, settings.parserRules);
     setParseState(result ? { kind: 'success', result } : { kind: 'failure' });
-  }, [combinedSharedText, isLoaded, settings.parserRules]);
+  }, [sourceText, isLoaded, settings.parserRules]);
 
   function calculateDefaultDate(dateStr: string | null, mode: ViewMode): Date {
     let baseDate = new Date();
@@ -179,48 +192,65 @@ function AddExpensePageContent() {
       </AppBar>
 
       <Container maxWidth="md" sx={{ mt: 3 }}>
-        {parseState.kind === 'loading' && (
-          <Skeleton variant="rounded" height={64} sx={{ mb: 2 }} />
+        {showPastePanel && (
+          <PasteSmsPanel
+            onText={(text) => {
+              if (text) {
+                setClipboardText(text);
+              } else {
+                setPanelDismissed(true);
+              }
+            }}
+            onSkip={() => setPanelDismissed(true)}
+          />
         )}
 
-        {parseState.kind === 'success' && (
-          <Alert severity="success" sx={{ mb: 2 }}>
-            <AlertTitle>Parsed from SMS</AlertTitle>
-            Parsed using the <strong>{matchedRuleName}</strong> rule. Review the details below and tap Save to record this expense.
-          </Alert>
-        )}
+        {!showPastePanel && (
+          <>
+            {parseState.kind === 'loading' && (
+              <Skeleton variant="rounded" height={64} sx={{ mb: 2 }} />
+            )}
 
-        {parseState.kind === 'failure' && (
-          <Alert severity="warning" sx={{ mb: 2 }}>
-            <AlertTitle>Couldn&apos;t parse this SMS automatically</AlertTitle>
-            Please add the expense details manually.{' '}
-            <MuiLink
-              component="button"
-              type="button"
-              onClick={() => router.push('/settings/sms-parser')}
-              sx={{ verticalAlign: 'baseline' }}
-            >
-              Update parser rules →
-            </MuiLink>
-          </Alert>
-        )}
+            {parseState.kind === 'success' && (
+              <Alert severity="success" sx={{ mb: 2 }}>
+                <AlertTitle>Parsed from SMS</AlertTitle>
+                Parsed using the <strong>{matchedRuleName}</strong> rule. Review the details below and tap Save to record this expense.
+              </Alert>
+            )}
 
-        <Box sx={{ p: 2, mb: 2, bgcolor: 'grey.200' }}>
-          {parseState.kind === 'loading' ? (
-            <Skeleton variant="rounded" height={400} />
-          ) : (
-            <AddExpenseForm
-              key={parseState.kind === 'success' ? parseState.result.matchedRuleId : 'manual'}
-              defaultDate={defaultDate}
-              viewMode={viewMode}
-              onSave={handleSave}
-              onSaveDraft={handleSaveDraft}
-              onCancel={handleCancel}
-              initialValues={initialValues}
-              source={formSource}
-            />
-          )}
-        </Box>
+            {parseState.kind === 'failure' && (
+              <Alert severity="warning" sx={{ mb: 2 }}>
+                <AlertTitle>Couldn&apos;t parse this SMS automatically</AlertTitle>
+                Please add the expense details manually.{' '}
+                <MuiLink
+                  component="button"
+                  type="button"
+                  onClick={() => router.push('/settings/sms-parser')}
+                  sx={{ verticalAlign: 'baseline' }}
+                >
+                  Update parser rules →
+                </MuiLink>
+              </Alert>
+            )}
+
+            <Box sx={{ p: 2, mb: 2, bgcolor: 'grey.200' }}>
+              {parseState.kind === 'loading' ? (
+                <Skeleton variant="rounded" height={400} />
+              ) : (
+                <AddExpenseForm
+                  key={parseState.kind === 'success' ? parseState.result.matchedRuleId : 'manual'}
+                  defaultDate={defaultDate}
+                  viewMode={viewMode}
+                  onSave={handleSave}
+                  onSaveDraft={handleSaveDraft}
+                  onCancel={handleCancel}
+                  initialValues={initialValues}
+                  source={formSource}
+                />
+              )}
+            </Box>
+          </>
+        )}
       </Container>
 
       <Snackbar

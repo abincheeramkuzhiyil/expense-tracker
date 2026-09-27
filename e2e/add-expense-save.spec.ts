@@ -201,6 +201,48 @@ test.describe('Add Expense — SMS Web Share Target Pre-fill', () => {
   });
 });
 
+test.describe('Add Expense — Clipboard Paste Pre-fill', () => {
+  const HDFC_SMS =
+    'Dear Customer, INR 1,250.00 debited from A/c XX1234 on 21-Apr-26 to AMAZON. Avl Bal: INR 45,320.00. -HDFC Bank';
+
+  test.beforeEach(async ({ page }) => {
+    await page.context().grantPermissions(['clipboard-read', 'clipboard-write']);
+  });
+
+  test('should show the paste panel when launched from the clipboard shortcut', async ({ page }) => {
+    await page.goto(`/expenses/add?view=day&date=${TEST_DATE}&source=clipboard`);
+    await expect(page.getByRole('button', { name: /paste sms & auto-fill/i })).toBeVisible();
+  });
+
+  test('should pre-fill amount after pasting an SMS from the clipboard', async ({ page }) => {
+    await page.goto(`/expenses/add?view=day&date=${TEST_DATE}&source=clipboard`);
+    await page.evaluate((sms) => navigator.clipboard.writeText(sms), HDFC_SMS);
+
+    await page.getByRole('button', { name: /paste sms & auto-fill/i }).click();
+
+    await expect(page.getByLabel(/amount/i)).toHaveValue('1250');
+  });
+
+  test('should fall back to manual paste box and fill from typed text', async ({ page }) => {
+    await page.goto(`/expenses/add?view=day&date=${TEST_DATE}&source=clipboard`);
+
+    await page.getByRole('button', { name: /paste manually instead/i }).click();
+    await page.getByLabel(/paste sms text/i).fill(HDFC_SMS);
+    await page.getByRole('button', { name: /fill from text/i }).click();
+
+    await expect(page.getByLabel(/amount/i)).toHaveValue('1250');
+  });
+
+  test('should skip to a blank manual form via "Enter manually"', async ({ page }) => {
+    await page.goto(`/expenses/add?view=day&date=${TEST_DATE}&source=clipboard`);
+
+    await page.getByRole('button', { name: /enter manually/i }).click();
+
+    await expect(page.getByRole('button', { name: /paste sms & auto-fill/i })).toBeHidden();
+    await expect(page.getByLabel(/amount/i)).toHaveValue('');
+  });
+});
+
 test.describe('Add Expense — Edit & Delete from Day View', () => {
   const SEEDED_EXPENSE = {
     id: 'edit-del-1',

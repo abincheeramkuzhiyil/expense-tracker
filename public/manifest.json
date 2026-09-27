@@ -52,6 +52,19 @@
       ]
     },
     {
+      "name": "Add from clipboard",
+      "short_name": "Paste SMS",
+      "description": "Add an expense by pasting a copied bank SMS",
+      "url": "/expense-tracker/expenses/add?view=day&source=clipboard",
+      "icons": [
+        {
+          "src": "/expense-tracker/icon-192x192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
       "name": "View Expenses",
       "short_name": "Expenses",
       "description": "View your expense list",
