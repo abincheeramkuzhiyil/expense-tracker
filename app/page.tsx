@@ -40,8 +40,15 @@ export default function Home() {
           variant="contained"
           size="large"
           startIcon={<ContentPasteIcon />}
-          fullWidth
-          sx={{ maxWidth: 420 }}
+          sx={{
+            position: 'fixed',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            bottom: 'calc(env(safe-area-inset-bottom, 0px) + 24px)',
+            width: 'calc(100% - 32px)',
+            maxWidth: 420,
+            zIndex: (theme) => theme.zIndex.appBar,
+          }}
         >
           Add from copied SMS
         </Button>
