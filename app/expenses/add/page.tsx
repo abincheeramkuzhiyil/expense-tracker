@@ -17,6 +17,7 @@ import {
 } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import AddExpenseForm, { ExpenseFormData } from '@/components/expense/AddExpenseForm';
+import PasteSmsPanel from '@/components/expense/PasteSmsPanel';
 import { ExpenseSource, ParsedSmsResult, ViewMode } from '@/types/expense.types';
 import { addNewCategory, getCategories } from '@/utils/expenseCategories';
 import { saveExpense } from '@/utils/expenseStorage';
@@ -43,12 +44,23 @@ function AddExpensePageContent() {
     return [sharedTitle, sharedText].filter(Boolean).join(' ');
   }, [sharedText, sharedTitle]);
 
+  // "Add from clipboard" shortcut (?source=clipboard). We try to read the
+  // clipboard automatically on arrival; Android Chrome blocks silent reads
+  // without a user gesture, so PasteSmsPanel is shown as a one-tap fallback.
+  const isClipboardFlow = searchParams.get('source') === 'clipboard';
+  const [clipboardText, setClipboardText] = useState<string | null>(null);
+  const [clipboardTried, setClipboardTried] = useState(false);
+  const [manualSkip, setManualSkip] = useState(false);
+
+  // SMS body to parse — from the Web Share Target, or the clipboard shortcut.
+  const effectiveText = combinedSharedText ?? clipboardText;
+
   // Merchant classification runs independently of parserRules — it matches
-  // keywords against the full shared text to auto-fill Category and Spent On.
+  // keywords against the full SMS text to auto-fill Category and Spent On.
   const merchantMatch = useMemo(() => {
-    if (!combinedSharedText) return null;
-    return matchMerchant(combinedSharedText, getMerchantRules());
-  }, [combinedSharedText]);
+    if (!effectiveText) return null;
+    return matchMerchant(effectiveText, getMerchantRules());
+  }, [effectiveText]);
 
   const viewParam = searchParams.get('view') as ViewMode | null;
   const dateParam = searchParams.get('date');
@@ -59,12 +71,38 @@ function AddExpensePageContent() {
   const defaultDate = calculateDefaultDate(dateParam, viewMode);
 
   const [parseState, setParseState] = useState<ParseState>(
-    combinedSharedText ? { kind: 'loading' } : { kind: 'idle' }
+    combinedSharedText || isClipboardFlow ? { kind: 'loading' } : { kind: 'idle' }
   );
   const [draftSnackbarOpen, setDraftSnackbarOpen] = useState(false);
 
+  // Best-effort automatic clipboard read for the "Add from clipboard" shortcut.
   useEffect(() => {
-    if (!combinedSharedText) {
+    if (!isClipboardFlow || combinedSharedText || clipboardText || clipboardTried) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        if (!navigator.clipboard?.readText) throw new Error('clipboard-unavailable');
+        const text = await navigator.clipboard.readText();
+        if (!cancelled && text.trim()) setClipboardText(text.trim());
+      } catch {
+        // Gesture required (Android Chrome) or permission denied — fall back to
+        // the one-tap PasteSmsPanel rendered below.
+      } finally {
+        if (!cancelled) setClipboardTried(true);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [isClipboardFlow, combinedSharedText, clipboardText, clipboardTried]);
+
+  useEffect(() => {
+    // Still waiting for the clipboard auto-read attempt to finish.
+    if (isClipboardFlow && !effectiveText && !clipboardTried) {
+      setParseState({ kind: 'loading' });
+      return;
+    }
+    if (!effectiveText) {
       setParseState({ kind: 'idle' });
       return;
     }
@@ -72,9 +110,9 @@ function AddExpensePageContent() {
       setParseState({ kind: 'loading' });
       return;
     }
-    const result = parseSms(combinedSharedText, settings.parserRules);
+    const result = parseSms(effectiveText, settings.parserRules);
     setParseState(result ? { kind: 'success', result } : { kind: 'failure' });
-  }, [combinedSharedText, isLoaded, settings.parserRules]);
+  }, [effectiveText, isClipboardFlow, clipboardTried, isLoaded, settings.parserRules]);
 
   function calculateDefaultDate(dateStr: string | null, mode: ViewMode): Date {
     let baseDate = new Date();
@@ -158,6 +196,11 @@ function AddExpensePageContent() {
     );
   }, [parseState, settings.parserRules]);
 
+  // Fallback UI: only when the clipboard auto-read was attempted but produced
+  // no text (e.g. Android Chrome blocked the silent read) and the user hasn't
+  // chosen to enter the expense manually.
+  const showPastePanel = isClipboardFlow && clipboardTried && !effectiveText && !manualSkip;
+
   return (
     <Box>
       <AppBar position="static" color="default" elevation={1}>
@@ -178,48 +221,57 @@ function AddExpensePageContent() {
       </AppBar>
 
       <Container maxWidth="md" sx={{ mt: 3 }}>
-        {parseState.kind === 'loading' && (
-          <Skeleton variant="rounded" height={64} sx={{ mb: 2 }} />
-        )}
+        {showPastePanel ? (
+          <PasteSmsPanel
+            onText={(t) => setClipboardText(t)}
+            onSkip={() => setManualSkip(true)}
+          />
+        ) : (
+          <>
+            {parseState.kind === 'loading' && (
+              <Skeleton variant="rounded" height={64} sx={{ mb: 2 }} />
+            )}
 
-        {parseState.kind === 'success' && (
-          <Alert severity="success" sx={{ mb: 2 }}>
-            <AlertTitle>Parsed from SMS</AlertTitle>
-            Parsed using the <strong>{matchedRuleName}</strong> rule. Review the details below and tap Save to record this expense.
-          </Alert>
-        )}
+            {parseState.kind === 'success' && (
+              <Alert severity="success" sx={{ mb: 2 }}>
+                <AlertTitle>Parsed from SMS</AlertTitle>
+                Parsed using the <strong>{matchedRuleName}</strong> rule. Review the details below and tap Save to record this expense.
+              </Alert>
+            )}
 
-        {parseState.kind === 'failure' && (
-          <Alert severity="warning" sx={{ mb: 2 }}>
-            <AlertTitle>Couldn&apos;t parse this SMS automatically</AlertTitle>
-            Please add the expense details manually.{' '}
-            <MuiLink
-              component="button"
-              type="button"
-              onClick={() => router.push('/settings/sms-parser')}
-              sx={{ verticalAlign: 'baseline' }}
-            >
-              Update parser rules →
-            </MuiLink>
-          </Alert>
-        )}
+            {parseState.kind === 'failure' && (
+              <Alert severity="warning" sx={{ mb: 2 }}>
+                <AlertTitle>Couldn&apos;t parse this SMS automatically</AlertTitle>
+                Please add the expense details manually.{' '}
+                <MuiLink
+                  component="button"
+                  type="button"
+                  onClick={() => router.push('/settings/sms-parser')}
+                  sx={{ verticalAlign: 'baseline' }}
+                >
+                  Update parser rules →
+                </MuiLink>
+              </Alert>
+            )}
 
-        <Box sx={{ p: 2, mb: 2, bgcolor: 'grey.200' }}>
-          {parseState.kind === 'loading' ? (
-            <Skeleton variant="rounded" height={400} />
-          ) : (
-            <AddExpenseForm
-              key={parseState.kind === 'success' ? parseState.result.matchedRuleId : 'manual'}
-              defaultDate={defaultDate}
-              viewMode={viewMode}
-              onSave={handleSave}
-              onSaveDraft={handleSaveDraft}
-              onCancel={handleCancel}
-              initialValues={initialValues}
-              source={formSource}
-            />
-          )}
-        </Box>
+            <Box sx={{ p: 2, mb: 2, bgcolor: 'grey.200' }}>
+              {parseState.kind === 'loading' ? (
+                <Skeleton variant="rounded" height={400} />
+              ) : (
+                <AddExpenseForm
+                  key={parseState.kind === 'success' ? parseState.result.matchedRuleId : 'manual'}
+                  defaultDate={defaultDate}
+                  viewMode={viewMode}
+                  onSave={handleSave}
+                  onSaveDraft={handleSaveDraft}
+                  onCancel={handleCancel}
+                  initialValues={initialValues}
+                  source={formSource}
+                />
+              )}
+            </Box>
+          </>
+        )}
       </Container>
 
       <Snackbar

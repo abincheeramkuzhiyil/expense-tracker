@@ -214,6 +214,17 @@ test.describe('Add Expense — Clipboard Paste Pre-fill', () => {
     await expect(page.getByRole('button', { name: /paste sms & auto-fill/i })).toBeVisible();
   });
 
+  test('should auto-read the clipboard and pre-fill without tapping the button', async ({ page }) => {
+    // Seed the clipboard BEFORE navigating so the auto-read on arrival finds it.
+    await page.goto('/expenses');
+    await page.evaluate((sms) => navigator.clipboard.writeText(sms), HDFC_SMS);
+
+    await page.goto(`/expenses/add?view=day&date=${TEST_DATE}&source=clipboard`);
+
+    await expect(page.getByLabel(/amount/i)).toHaveValue('1250');
+    await expect(page.getByRole('button', { name: /paste sms & auto-fill/i })).toBeHidden();
+  });
+
   test('should pre-fill amount after pasting an SMS from the clipboard', async ({ page }) => {
     await page.goto(`/expenses/add?view=day&date=${TEST_DATE}&source=clipboard`);
     await page.evaluate((sms) => navigator.clipboard.writeText(sms), HDFC_SMS);

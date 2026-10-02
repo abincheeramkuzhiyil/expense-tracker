@@ -30,4 +30,14 @@ test.describe('Home Page', () => {
     await expect(page).toHaveURL(/\/expenses/);
     await expect(page.getByRole('heading', { name: /expenses/i })).toBeVisible();
   });
+
+  test('should open the clipboard paste flow from the "Add from copied SMS" button', async ({ page }) => {
+    const homePage = new HomePage(page);
+    await homePage.navigate();
+
+    await page.getByRole('link', { name: /add from copied sms/i }).click();
+
+    await expect(page).toHaveURL(/source=clipboard/);
+    await expect(page.getByRole('button', { name: /paste sms & auto-fill/i })).toBeVisible();
+  });
 });
