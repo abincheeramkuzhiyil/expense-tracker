@@ -1,3 +1,5 @@
+'use client';
+
 import Link from 'next/link';
 import { Box, Button, Container, Typography } from '@mui/material';
 import ContentPasteIcon from '@mui/icons-material/ContentPaste';
