@@ -187,6 +187,22 @@ export function getExpensesByYear(year: number): Expense[] {
   }
 }
 
+/** Returns copies of every approved expense across all years, in stored (date-string) form. */
+export function getAllStoredExpenses(): StoredExpense[] {
+  if (typeof window === 'undefined') return [];
+  try {
+    const raw = localStorage.getItem(YEAR_INDEX_KEY);
+    const years: string[] = raw ? JSON.parse(raw) : [];
+    return years.flatMap((year) =>
+      Object.values(getYearData(Number(year)))
+        .flat()
+        .map((e) => ({ ...e }))
+    );
+  } catch {
+    return [];
+  }
+}
+
 // ─── Pending review API ───────────────────────────────────────────────────────
 
 /** Returns all expenses in the pending queue, sorted newest-first. */

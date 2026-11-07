@@ -155,6 +155,7 @@ export async function seedApprovedExpenses(
   expenses: Array<{
     id: string;
     amount: number;
+    spentOn?: string;
     category: string;
     date: string; // "YYYY-MM-DD"
     description: string;

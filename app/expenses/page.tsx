@@ -9,6 +9,7 @@ import {
   Button,
   Container,
   Grid,
+  IconButton,
   Typography,
   FormControl,
   InputLabel,
@@ -16,12 +17,14 @@ import {
   MenuItem,
   SelectChangeEvent,
 } from '@mui/material';
+import SearchIcon from '@mui/icons-material/Search';
 import DateNavigation from '@/components/expense/DateNavigation';
 import ExpenseList from '@/components/expense/ExpenseList';
 import MonthDayTable from '@/components/expense/MonthDayTable';
 import YearSummaryTable from '@/components/expense/YearSummaryTable';
 import AddExpenseFab from '@/components/expense/AddExpenseFab';
 import PendingExpenseReview from '@/components/expense/PendingExpenseReview';
+import ExpenseSearchSheet from '@/components/expense/ExpenseSearchSheet';
 import { Expense, ViewMode } from '@/types/expense.types';
 import { getExpensesByDay, getExpensesByMonth, getExpensesByYear, subscribeToExpenseChanges } from '@/utils/expenseStorage';
 import { usePendingExpenses } from '@/hooks/usePendingExpenses';
@@ -32,6 +35,7 @@ function ExpensesPageContent() {
   const { pending } = usePendingExpenses();
   const [reviewOpen, setReviewOpen] = useState(false);
   const [bannerDismissed, setBannerDismissed] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
 
   // Initialize from URL search params or defaults
   const viewParam = searchParams.get('view') as ViewMode | null;
@@ -164,7 +168,14 @@ function ExpensesPageContent() {
               Expenses
             </Typography>
           </Grid>
-          <Grid item xs={6} md={3} sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+          <Grid item xs={6} md={3} sx={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'flex-end' }}>
+            <IconButton
+              aria-label="Search expenses"
+              onClick={() => setSearchOpen(true)}
+              sx={{ mr: 1 }}
+            >
+              <SearchIcon />
+            </IconButton>
             <FormControl variant="standard">
               <InputLabel id="view-select-label">View</InputLabel>
               <Select
@@ -220,6 +231,7 @@ function ExpensesPageContent() {
       </Container>
 
       <PendingExpenseReview open={reviewOpen} onClose={() => setReviewOpen(false)} />
+      <ExpenseSearchSheet open={searchOpen} onClose={() => setSearchOpen(false)} />
     </Box>
   );
 }
