@@ -5,6 +5,7 @@ import { Autocomplete, Box, Button, Stack, TextField, Typography } from '@mui/ma
 import TagPills from './TagPills';
 import SearchResultsTable, { SEARCH_PAGE_SIZE, SearchRangeChips } from './SearchResultsTable';
 import { useSearchableExpenses } from '@/hooks/useSearchableExpenses';
+import { dismissKeyboardOnTouch } from '@/utils/dismissKeyboard';
 import {
   SearchRange,
   TagSuggestion,
@@ -70,6 +71,8 @@ export default function TagFilterPanel({ open }: TagFilterPanelProps) {
           const picked = value[value.length - 1];
           if (picked) changeSelected([...selected, picked.label]);
           setInputValue('');
+          // Close the keyboard so the results are visible without another tap
+          dismissKeyboardOnTouch();
         }}
         renderOption={(props, option) => (
           <li {...props} key={option.label}>

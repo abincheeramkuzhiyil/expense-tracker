@@ -8,6 +8,7 @@ import StandardBottomSheet from '@/components/common/StandardBottomSheet';
 import SearchResultsTable, { SEARCH_PAGE_SIZE, SearchRangeChips } from './SearchResultsTable';
 import TagFilterPanel from './TagFilterPanel';
 import { useSearchableExpenses } from '@/hooks/useSearchableExpenses';
+import { dismissKeyboardOnTouch } from '@/utils/dismissKeyboard';
 import {
   SearchQuery,
   SearchRange,
@@ -73,12 +74,15 @@ function SearchPanel({ open }: { open: boolean }) {
   function handleSelect(value: SearchOption | string | null) {
     if (!value) return;
     if (typeof value === 'string') {
-      if (value.trim()) applyQuery({ type: 'text', value });
+      if (!value.trim()) return;
+      applyQuery({ type: 'text', value });
     } else if (value.kind === 'spentOn') {
       applyQuery({ type: 'spentOn', value: value.label });
     } else {
       applyQuery({ type: 'text', value: value.query });
     }
+    // Close the keyboard so the results are visible without another tap
+    dismissKeyboardOnTouch();
   }
 
   function handleRangeChange(next: SearchRange) {
