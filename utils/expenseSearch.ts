@@ -136,3 +136,94 @@ export function dateKeyToDate(dateKey: string): Date {
   const [year, month, day] = dateKey.split('-').map(Number);
   return new Date(year, month - 1, day);
 }
+
+// ─── Tag filter ───────────────────────────────────────────────────────────────
+
+export interface TagSuggestion {
+  label: string;
+  count: number;
+}
+
+function newestFirst(a: StoredExpense, b: StoredExpense): number {
+  return (
+    b.date.localeCompare(a.date) ||
+    b.createdAt.localeCompare(a.createdAt) ||
+    a.id.localeCompare(b.id)
+  );
+}
+
+/** Tags actually used on expenses, case variants merged, alphabetical, with how many expenses use each. */
+export function buildTagIndex(expenses: StoredExpense[]): TagSuggestion[] {
+  const groups = new Map<string, Map<string, number>>();
+  for (const e of expenses) {
+    // An expense counts once per tag even if its list repeats a tag in different casing
+    const seen = new Set<string>();
+    for (const raw of e.tags ?? []) {
+      const key = normalizeText(raw);
+      if (!key || seen.has(key)) continue;
+      seen.add(key);
+      const casings = groups.get(key) ?? new Map<string, number>();
+      const label = raw.trim().replace(/\s+/g, ' ');
+      casings.set(label, (casings.get(label) ?? 0) + 1);
+      groups.set(key, casings);
+    }
+  }
+
+  return [...groups.values()]
+    .map((casings) => {
+      let label = '';
+      let best = 0;
+      let count = 0;
+      for (const [candidate, n] of casings) {
+        count += n;
+        if (n > best || (n === best && candidate.localeCompare(label) < 0)) {
+          best = n;
+          label = candidate;
+        }
+      }
+      return { label, count };
+    })
+    .sort((a, b) => a.label.localeCompare(b.label, undefined, { sensitivity: 'base' }));
+}
+
+/** Tags that contain the typed text (accent/case-insensitive), alphabetical, minus the already selected ones. */
+export function suggestTags(
+  index: TagSuggestion[],
+  query: string,
+  selected: string[] = []
+): TagSuggestion[] {
+  const q = normalizeText(query);
+  const taken = new Set(selected.map(normalizeText));
+  return index.filter((t) => {
+    const key = normalizeText(t.label);
+    return !taken.has(key) && (!q || key.includes(q));
+  });
+}
+
+/** Expenses carrying ALL of the given tags (AND), newest first. No tags selected returns nothing. */
+export function filterByTags(
+  expenses: StoredExpense[],
+  tags: string[],
+  range: SearchRange = 'all',
+  today: Date = new Date()
+): StoredExpense[] {
+  const wanted = [...new Set(tags.map(normalizeText).filter(Boolean))];
+  if (wanted.length === 0) return [];
+
+  const from = getRangeStart(range, today);
+  return expenses
+    .filter((e) => {
+      if (from && e.date < from) return false;
+      if (!e.tags || e.tags.length === 0) return false;
+      const have = new Set(e.tags.map(normalizeText));
+      return wanted.every((t) => have.has(t));
+    })
+    .sort(newestFirst);
+}
+
+/** Sum of amounts, rounded to cents to avoid floating-point drift. */
+export function sumAmounts(expenses: StoredExpense[]): number {
+  const cents = expenses.reduce((sum, e) => sum + Math.round(e.amount * 100), 0);
+  return cents / 100;
+}
+

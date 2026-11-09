@@ -9,14 +9,24 @@ export interface TagPillsProps {
   onDelete?: (tag: string) => void;
   /** Called when a pill body is tapped. Makes the pills clickable. */
   onClick?: (tag: string) => void;
+  /** Keep all pills on one line and scroll sideways instead of wrapping. */
+  singleLine?: boolean;
 }
 
 /** Wrapping row of small outlined pills, one per tag. Read-only unless `onDelete` is given. */
-export default function TagPills({ tags, onDelete, onClick }: TagPillsProps) {
+export default function TagPills({ tags, onDelete, onClick, singleLine }: TagPillsProps) {
   if (tags.length === 0) return null;
 
   return (
-    <Stack direction="row" sx={{ flexWrap: 'wrap', gap: 0.75 }} data-testid="tag-pills">
+    <Stack
+      direction="row"
+      sx={{
+        gap: 0.75,
+        flexWrap: singleLine ? 'nowrap' : 'wrap',
+        ...(singleLine && { overflowX: 'auto', pb: 0.5, '& .MuiChip-root': { flexShrink: 0 } }),
+      }}
+      data-testid="tag-pills"
+    >
       {tags.map((tag) => (
         <Chip
           key={tag}

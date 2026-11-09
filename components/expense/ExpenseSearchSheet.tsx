@@ -1,44 +1,24 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import {
-  Autocomplete,
-  Box,
-  Button,
-  Chip,
-  IconButton,
-  Stack,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  TextField,
-  Typography,
-} from '@mui/material';
+import { Autocomplete, Box, Button, Stack, Tab, Tabs, TextField, Typography } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
-import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
+import LocalOfferOutlinedIcon from '@mui/icons-material/LocalOfferOutlined';
 import StandardBottomSheet from '@/components/common/StandardBottomSheet';
-import DayDetailModal from './DayDetailModal';
+import SearchResultsTable, { SEARCH_PAGE_SIZE, SearchRangeChips } from './SearchResultsTable';
+import TagFilterPanel from './TagFilterPanel';
 import { useSearchableExpenses } from '@/hooks/useSearchableExpenses';
 import {
   SearchQuery,
   SearchRange,
   buildSpentOnIndex,
-  dateKeyToDate,
-  formatResultDate,
   searchExpenses,
   suggestSpentOn,
 } from '@/utils/expenseSearch';
 
-const PAGE_SIZE = 50;
+const PAGE_SIZE = SEARCH_PAGE_SIZE;
 
-const RANGES: { value: SearchRange; label: string }[] = [
-  { value: 'all', label: 'All time' },
-  { value: '12m', label: 'Last 12 months' },
-  { value: '3m', label: 'Last 3 months' },
-];
+type SearchTab = 'keyword' | 'tags';
 
 type SearchOption =
   | { kind: 'spentOn'; label: string; count: number }
@@ -62,7 +42,6 @@ function SearchPanel({ open }: { open: boolean }) {
   const [query, setQuery] = useState<SearchQuery | null>(null);
   const [range, setRange] = useState<SearchRange>('all');
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
-  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   // Wait for the sheet's slide-up transition before focusing, otherwise focus is lost.
@@ -85,7 +64,6 @@ function SearchPanel({ open }: { open: boolean }) {
     () => (query ? searchExpenses(expenses, query, range) : []),
     [expenses, query, range]
   );
-  const visible = results.slice(0, visibleCount);
 
   function applyQuery(next: SearchQuery | null) {
     setQuery(next);
@@ -151,19 +129,7 @@ function SearchPanel({ open }: { open: boolean }) {
         )}
       />
 
-      <Stack direction="row" spacing={1} sx={{ mt: 2, flexWrap: 'wrap', rowGap: 1 }}>
-        {RANGES.map((r) => (
-          <Chip
-            key={r.value}
-            label={r.label}
-            clickable
-            color={range === r.value ? 'primary' : 'default'}
-            variant={range === r.value ? 'filled' : 'outlined'}
-            aria-pressed={range === r.value}
-            onClick={() => handleRangeChange(r.value)}
-          />
-        ))}
-      </Stack>
+      <SearchRangeChips range={range} onChange={handleRangeChange} />
 
       {!query && (
         <Typography color="text.secondary" sx={{ mt: 4, textAlign: 'center' }}>
@@ -194,70 +160,10 @@ function SearchPanel({ open }: { open: boolean }) {
       )}
 
       {query && results.length > 0 && (
-        <Box sx={{ mt: 2, p: 1, backgroundColor: '#eaeeef' }}>
-          <TableContainer sx={{ backgroundColor: 'background.paper' }}>
-            <Table size="small" sx={{ tableLayout: 'fixed' }} data-testid="search-results">
-              <TableHead>
-                <TableRow>
-                  <TableCell sx={{ width: 78, px: 1, fontWeight: 'bold' }}>Date</TableCell>
-                  <TableCell sx={{ px: 1, fontWeight: 'bold' }}>Spent On</TableCell>
-                  <TableCell align="right" sx={{ width: 84, px: 1, fontWeight: 'bold' }}>
-                    Amount
-                  </TableCell>
-                  <TableCell sx={{ width: 44, p: 0 }} />
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {visible.map((e) => {
-                  const dateLabel = formatResultDate(e.date);
-                  return (
-                    <TableRow key={e.id} data-testid="search-result-row">
-                      <TableCell sx={{ px: 1, whiteSpace: 'nowrap', fontSize: '0.85rem' }}>
-                        {dateLabel}
-                      </TableCell>
-                      <TableCell sx={{ px: 1 }}>
-                        <Typography variant="body2" noWrap>
-                          {e.spentOn}
-                        </Typography>
-                        {e.description.trim() && (
-                          <Typography variant="caption" color="text.secondary" noWrap display="block">
-                            {e.description}
-                          </Typography>
-                        )}
-                      </TableCell>
-                      <TableCell align="right" sx={{ px: 1 }}>
-                        {e.amount.toFixed(2)}
-                      </TableCell>
-                      <TableCell sx={{ p: 0 }}>
-                        <IconButton
-                          size="small"
-                          aria-label={`View expenses on ${dateLabel}`}
-                          onClick={() => setSelectedDate(dateKeyToDate(e.date))}
-                        >
-                          <KeyboardArrowDownIcon />
-                        </IconButton>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
-          </TableContainer>
-          {results.length > visible.length && (
-            <Box sx={{ textAlign: 'center', mt: 1 }}>
-              <Button onClick={() => setVisibleCount((c) => c + PAGE_SIZE)}>
-                Show more ({visible.length} of {results.length})
-              </Button>
-            </Box>
-          )}
-        </Box>
-      )}
-
-      {selectedDate && (
-        <DayDetailModal
-          open
-          date={selectedDate}
-          onClose={() => setSelectedDate(null)}
+        <SearchResultsTable
+          results={results}
+          visibleCount={visibleCount}
+          onShowMore={() => setVisibleCount((c) => c + PAGE_SIZE)}
         />
       )}
     </Box>
@@ -267,8 +173,12 @@ function SearchPanel({ open }: { open: boolean }) {
 export default function ExpenseSearchSheet({ open, onClose }: ExpenseSearchSheetProps) {
   // SwipeableDrawer keeps children mounted when closed; a new key on each open resets the search state.
   const [sessionKey, setSessionKey] = useState(0);
+  const [tab, setTab] = useState<SearchTab>('keyword');
   useEffect(() => {
-    if (open) setSessionKey((k) => k + 1);
+    if (open) {
+      setSessionKey((k) => k + 1);
+      setTab('keyword');
+    }
   }, [open]);
 
   return (
@@ -278,7 +188,24 @@ export default function ExpenseSearchSheet({ open, onClose }: ExpenseSearchSheet
       title="Search Expenses"
       icon={<SearchIcon fontSize="small" sx={{ color: 'primary.contrastText' }} />}
     >
-      <SearchPanel key={sessionKey} open={open} />
+      <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+        <Tabs
+          value={tab}
+          onChange={(_e, value: SearchTab) => setTab(value)}
+          variant="fullWidth"
+          aria-label="Search mode"
+        >
+          <Tab value="keyword" label="Keyword" icon={<SearchIcon />} iconPosition="start" />
+          <Tab value="tags" label="Tags" icon={<LocalOfferOutlinedIcon />} iconPosition="start" />
+        </Tabs>
+      </Box>
+      {/* Both panels stay mounted so each keeps its own state while switching tabs */}
+      <Box hidden={tab !== 'keyword'}>
+        <SearchPanel key={`k-${sessionKey}`} open={open} />
+      </Box>
+      <Box hidden={tab !== 'tags'}>
+        <TagFilterPanel key={`t-${sessionKey}`} open={open} />
+      </Box>
     </StandardBottomSheet>
   );
 }

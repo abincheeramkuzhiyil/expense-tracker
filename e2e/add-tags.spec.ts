@@ -64,6 +64,29 @@ test.describe('Add Tags — Add Expense form', () => {
     await expect(addPage.tagPills.filter({ hasText: 'Gifts' })).toBeVisible();
   });
 
+  test('should show the tag count on the button and keep pills on one line', async ({ page }) => {
+    const addPage = new AddExpensePage(page);
+    await addPage.navigate({ view: 'day', date: TEST_DATE });
+
+    await addPage.addTags(['Trip', 'Gifts', 'A long tag name for wrapping', 'Another long tag name']);
+
+    await expect(addPage.addTagButton).toContainText('4');
+    const tops = await addPage.tagPills.evaluateAll((els) =>
+      els.map((el) => Math.round(el.getBoundingClientRect().top))
+    );
+    expect(new Set(tops).size).toBe(1);
+  });
+
+  test('should add no extra height above the Date field when empty', async ({ page }) => {
+    const addPage = new AddExpensePage(page);
+    await addPage.navigate({ view: 'day', date: TEST_DATE });
+
+    const button = await addPage.addTagButton.boundingBox();
+    const date = await addPage.dateField.boundingBox();
+    // The tag button sits on the same row as Date
+    expect(Math.abs(button!.y - date!.y)).toBeLessThan(20);
+  });
+
   test('should discard sheet changes when the sheet is closed without Ok', async ({ page }) => {
     const addPage = new AddExpensePage(page);
     await addPage.navigate({ view: 'day', date: TEST_DATE });

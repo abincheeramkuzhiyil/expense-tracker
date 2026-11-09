@@ -8,9 +8,19 @@ export class ExpenseSearchPage {
   readonly input: Locator;
   readonly rows: Locator;
   readonly noResults: Locator;
+  readonly keywordTab: Locator;
+  readonly tagsTab: Locator;
+  readonly tagInput: Locator;
+  readonly tagTotal: Locator;
+  readonly tagNoResults: Locator;
 
   constructor(page: Page) {
     this.page = page;
+    this.keywordTab = page.getByRole('tab', { name: 'Keyword' });
+    this.tagsTab = page.getByRole('tab', { name: 'Tags' });
+    this.tagInput = page.getByRole('combobox', { name: 'Select tags' });
+    this.tagTotal = page.getByTestId('tag-total');
+    this.tagNoResults = page.getByTestId('tag-no-results');
     this.openButton = page.getByRole('button', { name: 'Search expenses', exact: true });
     this.heading = page.getByRole('heading', { name: 'Search Expenses', exact: true });
     this.input = page.getByRole('combobox', { name: 'Spent On or keyword' });
@@ -53,6 +63,18 @@ export class ExpenseSearchPage {
 
   dayButton(rowIndex: number): Locator {
     return this.rows.nth(rowIndex).getByRole('button', { name: /^View expenses on/ });
+  }
+
+  /** Switches to the Tags tab. */
+  async openTagsTab(): Promise<void> {
+    await this.tagsTab.click();
+    await expect(this.tagInput).toBeVisible();
+  }
+
+  /** Opens the tag list and picks one tag by its exact name (option text is "<name><count>"). */
+  async selectTag(name: string): Promise<void> {
+    await this.tagInput.click();
+    await this.page.getByRole('option', { name: new RegExp(`^${name}\\s*\\d+$`) }).click();
   }
 
   /** Closes the topmost open sheet; lower sheets are aria-hidden, and its header Close precedes any snackbar Close. */

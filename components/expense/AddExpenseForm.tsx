@@ -10,6 +10,9 @@ import {
   Alert,
   Grid,
   Chip,
+  IconButton,
+  Badge,
+  Tooltip,
   Switch,
   FormControlLabel,
   Typography,
@@ -18,7 +21,7 @@ import {
 } from '@mui/material';
 import SmsIcon from '@mui/icons-material/Sms';
 import CategoryIcon from '@mui/icons-material/Category';
-import AddIcon from '@mui/icons-material/Add';
+import LocalOfferOutlinedIcon from '@mui/icons-material/LocalOfferOutlined';
 import DrawerField from '@/components/common/DrawerField';
 import TagPickerSheet from '@/components/expense/TagPickerSheet';
 import TagPills from '@/components/expense/TagPills';
@@ -263,30 +266,48 @@ export default function AddExpenseForm({
             </Grid>
           )}
 
-          {/* ── Tags ─────────────────────────────────────────────────────── */}
+          {/* ── Date + Tags ──────────────────────────────────────────────── */}
           <Grid item xs={12}>
-            <Box
-              sx={{
-                display: 'flex',
-                alignItems: 'flex-start',
-                gap: 1,
-              }}
-            >
-              <Box sx={{ flexGrow: 1, minWidth: 0 }}>
-                <TagPills tags={formData.tags} onDelete={handleTagRemove} />
-              </Box>
-              <Button
-                variant="outlined"
-                size="small"
-                startIcon={<AddIcon />}
-                onClick={() => setTagSheetOpen(true)}
-                aria-haspopup="dialog"
-                aria-expanded={tagSheetOpen}
-                sx={{ flexShrink: 0, whiteSpace: 'nowrap', ml: 'auto' }}
-              >
-                Add tag
-              </Button>
+            <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1 }}>
+              <TextField
+                variant="filled"
+                fullWidth
+                required
+                label="Date"
+                type="date"
+                value={formData.date}
+                onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                error={!!errors.date}
+                helperText={errors.date}
+                InputLabelProps={{ shrink: true }}
+              />
+              <Tooltip title="Add tag">
+                <IconButton
+                  aria-label="Add tag"
+                  aria-haspopup="dialog"
+                  aria-expanded={tagSheetOpen}
+                  onClick={() => setTagSheetOpen(true)}
+                  color={formData.tags.length > 0 ? 'primary' : 'default'}
+                  sx={{
+                    flexShrink: 0,
+                    width: 56,
+                    height: 56,
+                    borderRadius: 1,
+                    border: 1,
+                    borderColor: formData.tags.length > 0 ? 'primary.main' : 'divider',
+                  }}
+                >
+                  <Badge badgeContent={formData.tags.length} color="primary">
+                    <LocalOfferOutlinedIcon />
+                  </Badge>
+                </IconButton>
+              </Tooltip>
             </Box>
+            {formData.tags.length > 0 && (
+              <Box sx={{ mt: 1 }}>
+                <TagPills tags={formData.tags} onDelete={handleTagRemove} singleLine />
+              </Box>
+            )}
             <TagPickerSheet
               open={tagSheetOpen}
               selected={formData.tags}
@@ -295,20 +316,6 @@ export default function AddExpenseForm({
             />
           </Grid>
 
-          <Grid item xs={12}>
-            <TextField
-              variant="filled"
-              fullWidth
-              required
-              label="Date"
-              type="date"
-              value={formData.date}
-              onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-              error={!!errors.date}
-              helperText={errors.date}
-              InputLabelProps={{ shrink: true }}
-            />
-          </Grid>
 
           {/* ── Spent On ─────────────────────────────────────────────────── */}
           <Grid item xs={12}>
