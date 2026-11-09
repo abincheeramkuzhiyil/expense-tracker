@@ -15,9 +15,19 @@ export class AddExpensePage {
   readonly saveButton: Locator;
   readonly cancelButton: Locator;
   readonly infoAlert: Locator;
+  readonly addTagButton: Locator;
+  readonly tagSheetHeading: Locator;
+  readonly tagInput: Locator;
+  readonly tagSheetOkButton: Locator;
+  readonly tagPills: Locator;
 
   constructor(page: Page) {
     this.page = page;
+    this.addTagButton = page.getByRole('button', { name: 'Add tag' });
+    this.tagSheetHeading = page.getByRole('heading', { name: 'Add Tags' });
+    this.tagInput = page.getByRole('combobox', { name: 'Tag', exact: true });
+    this.tagSheetOkButton = page.getByRole('button', { name: 'Ok', exact: true });
+    this.tagPills = page.locator('form').getByTestId('tag-pill');
     this.backButton = page.getByRole('button', { name: /back/i }).first();
     this.pageTitle = page.getByRole('heading', { name: /add expense/i });
     this.dateField = page.getByLabel(/date/i);
@@ -155,6 +165,34 @@ export class AddExpensePage {
     const field = this.page.getByLabel(new RegExp(fieldLabel, 'i'));
     const ariaInvalid = await field.getAttribute('aria-invalid');
     return ariaInvalid === 'true';
+  }
+
+  /**
+   * Open the Add Tags bottom sheet
+   */
+  async openTagSheet(): Promise<void> {
+    await this.addTagButton.click();
+    await this.tagSheetHeading.waitFor();
+  }
+
+  /**
+   * Type a tag in the open sheet and pick it (the "Create" option or an existing match)
+   */
+  async addTagInSheet(tag: string): Promise<void> {
+    await this.tagInput.fill(tag);
+    await this.page.getByRole('option').first().click();
+  }
+
+  /**
+   * Add tags through the sheet and confirm with Ok
+   */
+  async addTags(tags: string[]): Promise<void> {
+    await this.openTagSheet();
+    for (const tag of tags) {
+      await this.addTagInSheet(tag);
+    }
+    await this.tagSheetOkButton.click();
+    await this.tagSheetHeading.waitFor({ state: 'hidden' });
   }
 
   /**

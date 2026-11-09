@@ -20,6 +20,7 @@ import { ExpenseFormData } from '@/components/expense/AddExpenseForm';
 import { deleteExpense, updateExpense } from '@/utils/expenseStorage';
 import DeleteExpenseDialog from './DeleteExpenseDialog';
 import EditExpenseDialog from './EditExpenseDialog';
+import TagPills from './TagPills';
 
 interface ExpenseListProps {
   expenses: Expense[];
@@ -110,6 +111,11 @@ export default function ExpenseList({
             <Typography>
               <b>Details:</b> {expense.description}
             </Typography>
+            {expense.tags && expense.tags.length > 0 && (
+              <Box sx={{ mt: 1 }}>
+                <TagPills tags={expense.tags} />
+              </Box>
+            )}
             <Box sx={{ textAlign: 'right', mt: 1 }}>
               <ButtonGroup variant="contained">
                 <Button

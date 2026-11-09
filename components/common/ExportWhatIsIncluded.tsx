@@ -11,6 +11,8 @@ const KEY_DESCRIPTIONS: Record<string, string> = {
   appSettings: 'SMS parser rules (user-defined) and notification settings',
   userPreferences: 'UI preferences such as bottom sheet mode',
   spentOnCategoryMapping: 'Your learned merchant-to-category mappings (e.g. {"lunch": "Food"})',
+  expenseTags: 'Array of your tag names used to group expenses (e.g. ["Trip", "Gifts"])',
+  expenseTagsRecent: 'Your most recently used tags, newest first',
 };
 
 export default function ExportWhatIsIncluded() {

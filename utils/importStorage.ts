@@ -6,6 +6,7 @@ import { getCategories, saveCategories } from '@/utils/expenseCategories';
 import { saveSettings } from '@/utils/settingsStorage';
 import { saveUserPreferences } from '@/utils/userPreferencesStorage';
 import { getSpentOnMapping, saveSpentOnMapping } from '@/utils/spentOnMapping';
+import { addNewTags, getRecentTags, normalizeTagList, saveRecentTags } from '@/utils/expenseTags';
 import { isValidYearKey } from '@/utils/importValidation';
 
 const PENDING_STORAGE_KEY = 'expensesPending';
@@ -14,6 +15,8 @@ const SETTINGS_KEY = 'appSettings';
 const USER_PREFS_KEY = 'userPreferences';
 const CATEGORIES_KEY = 'expenseCategories';
 const SPENT_ON_KEY = 'spentOnCategoryMapping';
+const TAGS_KEY = 'expenseTags';
+const RECENT_TAGS_KEY = 'expenseTagsRecent';
 
 /** Removes all app data from localStorage and clears the year cache. */
 export function clearAllAppData(): void {
@@ -22,6 +25,30 @@ export function clearAllAppData(): void {
   localStorage.removeItem(USER_PREFS_KEY);
   localStorage.removeItem(CATEGORIES_KEY);
   localStorage.removeItem(SPENT_ON_KEY);
+  localStorage.removeItem(TAGS_KEY);
+  localStorage.removeItem(RECENT_TAGS_KEY);
+}
+
+function importTags(value: unknown): ImportKeyResult {
+  try {
+    const incoming = value as string[];
+    addNewTags(incoming);
+    return { key: 'expenseTags', status: 'success', recordsImported: incoming.length, recordsFailed: 0 };
+  } catch (e) {
+    return { key: 'expenseTags', status: 'error', recordsImported: 0, recordsFailed: 0, message: String(e) };
+  }
+}
+
+function importRecentTags(value: unknown): ImportKeyResult {
+  try {
+    const incoming = normalizeTagList(value as string[]);
+    const existing = getRecentTags();
+    const merged = [...incoming, ...existing.filter((t) => !incoming.some((i) => i.toLowerCase() === t.toLowerCase()))];
+    saveRecentTags(merged);
+    return { key: 'expenseTagsRecent', status: 'success', recordsImported: incoming.length, recordsFailed: 0 };
+  } catch (e) {
+    return { key: 'expenseTagsRecent', status: 'error', recordsImported: 0, recordsFailed: 0, message: String(e) };
+  }
 }
 
 function importCategories(value: unknown): ImportKeyResult {
@@ -78,6 +105,7 @@ function importYearData(year: string, value: unknown): ImportKeyResult {
       const existingIds = new Set(existingMonth.map((e) => e.id));
       const newItems = monthExpenses.filter((e) => !existingIds.has(e.id));
       existing[monthKey] = [...existingMonth, ...newItems];
+      addNewTags(newItems.flatMap((e) => e.tags ?? []));
       imported += newItems.length;
       skipped += monthExpenses.length - newItems.length;
     }
@@ -163,6 +191,10 @@ export function importData(data: Record<string, unknown>, clearFirst: boolean): 
       result = importUserPreferences(value);
     } else if (key === 'spentOnCategoryMapping') {
       result = importSpentOnMapping(value);
+    } else if (key === 'expenseTags') {
+      result = importTags(value);
+    } else if (key === 'expenseTagsRecent') {
+      result = importRecentTags(value);
     } else if (isValidYearKey(key)) {
       result = importYearData(key, value);
     } else {

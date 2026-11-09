@@ -15,6 +15,8 @@ export interface Expense {
   category: string;
   date: Date;
   description: string;
+  /** Free-form labels grouping expenses across categories, e.g. an event or a person. */
+  tags?: string[];
   source: ExpenseSource;
   status: ExpenseStatus;
   createdAt: Date;
@@ -31,6 +33,7 @@ export interface StoredExpense {
   category: string;
   date: string;        // "YYYY-MM-DD"
   description: string;
+  tags?: string[];
   source: ExpenseSource;
   createdAt: string;   // ISO string
   updatedAt: string;   // ISO string
@@ -49,6 +52,7 @@ export interface PendingStoredExpense {
   category: string;
   date: string;        // "YYYY-MM-DD"
   description: string;
+  tags?: string[];
   source: ExpenseSource;
   createdAt: string;   // ISO string
   updatedAt: string;   // ISO string

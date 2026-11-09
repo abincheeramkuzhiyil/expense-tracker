@@ -79,6 +79,7 @@ export default function PendingExpenseReview({ open, onClose }: PendingExpenseRe
             spentOn: restored.spentOn,
             category: restored.category,
             description: restored.description,
+            tags: restored.tags ?? [],
           },
           restored.source,
           'pending'
@@ -199,6 +200,7 @@ export default function PendingExpenseReview({ open, onClose }: PendingExpenseRe
                 spentOn: editing.spentOn,
                 category: editing.category,
                 description: editing.description,
+                tags: editing.tags ?? [],
               }}
               onSave={handleEditSave}
               onCancel={() => setEditing(null)}

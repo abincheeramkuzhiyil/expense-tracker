@@ -11,6 +11,8 @@ const KEY_DESCRIPTIONS: Record<string, string> = {
   appSettings: 'Object containing SMS parser rules and notification settings',
   userPreferences: 'Object containing UI preferences (e.g. bottom sheet mode)',
   spentOnCategoryMapping: 'Object mapping spent-on values to categories (e.g. {"lunch": "Food"})',
+  expenseTags: 'Array of tag name strings (e.g. ["Trip", "Gifts"])',
+  expenseTagsRecent: 'Array of recently used tag name strings, newest first',
 };
 
 const EXAMPLE_JSON = `{

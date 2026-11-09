@@ -26,6 +26,7 @@ export default function EditExpenseDialog({
     category: expense.category,
     amount: expense.amount,
     description: expense.description,
+    tags: expense.tags ?? [],
   };
 
   return (

@@ -18,7 +18,10 @@ import {
 } from '@mui/material';
 import SmsIcon from '@mui/icons-material/Sms';
 import CategoryIcon from '@mui/icons-material/Category';
+import AddIcon from '@mui/icons-material/Add';
 import DrawerField from '@/components/common/DrawerField';
+import TagPickerSheet from '@/components/expense/TagPickerSheet';
+import TagPills from '@/components/expense/TagPills';
 import { ExpenseSource, ViewMode } from '@/types/expense.types';
 import { getCategories, addNewCategory } from '@/utils/expenseCategories';
 import { formatDateForInput } from '@/utils/dateFormatter';
@@ -55,6 +58,8 @@ export interface ExpenseFormData {
   category: string;
   amount: number;
   description: string;
+  /** Tags attached to the expense; may be empty. */
+  tags: string[];
 }
 
 export default function AddExpenseForm({
@@ -81,6 +86,7 @@ export default function AddExpenseForm({
     category: initialValues?.category ?? '',
     amount: initialValues?.amount ?? 0,
     description: initialValues?.description ?? '',
+    tags: initialValues?.tags ?? [],
   });
 
   const [errors, setErrors] = useState<{
@@ -107,6 +113,8 @@ export default function AddExpenseForm({
   const [draftPrefillMapping, setDraftPrefillMapping] = useState(true);
   const [prefillMapping, setPrefillMapping] = useState(true);
 
+  // Tag sheet state
+  const [tagSheetOpen, setTagSheetOpen] = useState(false);
   useEffect(() => {
     if (formData.spentOn.trim()) {
       const resolved = resolveCategory(formData.spentOn);
@@ -224,6 +232,15 @@ export default function AddExpenseForm({
 
   const dateNote = getDateFieldNote();
 
+  function handleTagsConfirm(tags: string[]) {
+    setFormData((prev) => ({ ...prev, tags }));
+    setTagSheetOpen(false);
+  }
+
+  function handleTagRemove(tag: string) {
+    setFormData((prev) => ({ ...prev, tags: prev.tags.filter((t) => t !== tag) }));
+  }
+
   return (
     <Paper elevation={2} sx={{ padding: 3 }}>
       <form onSubmit={handleSubmit}>
@@ -245,6 +262,38 @@ export default function AddExpenseForm({
               <Alert severity="info">Note: {dateNote}</Alert>
             </Grid>
           )}
+
+          {/* ── Tags ─────────────────────────────────────────────────────── */}
+          <Grid item xs={12}>
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: 1,
+              }}
+            >
+              <Box sx={{ flexGrow: 1, minWidth: 0 }}>
+                <TagPills tags={formData.tags} onDelete={handleTagRemove} />
+              </Box>
+              <Button
+                variant="outlined"
+                size="small"
+                startIcon={<AddIcon />}
+                onClick={() => setTagSheetOpen(true)}
+                aria-haspopup="dialog"
+                aria-expanded={tagSheetOpen}
+                sx={{ flexShrink: 0, whiteSpace: 'nowrap', ml: 'auto' }}
+              >
+                Add tag
+              </Button>
+            </Box>
+            <TagPickerSheet
+              open={tagSheetOpen}
+              selected={formData.tags}
+              onClose={() => setTagSheetOpen(false)}
+              onConfirm={handleTagsConfirm}
+            />
+          </Grid>
 
           <Grid item xs={12}>
             <TextField

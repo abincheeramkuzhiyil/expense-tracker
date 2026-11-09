@@ -1,6 +1,7 @@
 import { Expense, ExpenseSource, ExpenseStatus, PendingStoredExpense, StoredExpense, StoredYear } from '@/types/expense.types';
 import { ExpenseFormData } from '@/components/expense/AddExpenseForm';
 import { v4 as uuidv4 } from 'uuid';
+import { normalizeTagList, recordTagsUsed } from '@/utils/expenseTags';
 
 const YEAR_INDEX_KEY = 'expenseYearIndex';
 const PENDING_STORAGE_KEY = 'expensesPending';
@@ -102,6 +103,7 @@ export function saveExpense(
   // Parse year/month from "YYYY-MM-DD" directly to avoid timezone shifting
   const [yearNum, monthNum] = formData.date.split('-').map(Number);
   const monthKey = String(monthNum);
+  const tags = normalizeTagList(formData.tags);
 
   const stored: StoredExpense = {
     id: uuidv4(),
@@ -110,6 +112,7 @@ export function saveExpense(
     category: formData.category.trim(),
     date: formData.date,
     description: formData.description,
+    ...(tags.length > 0 ? { tags } : {}),
     source,
     createdAt: now,
     updatedAt: now,
@@ -124,6 +127,7 @@ export function saveExpense(
       category: stored.category,
       date: stored.date,
       description: stored.description,
+      tags: stored.tags,
       source: stored.source,
       createdAt: stored.createdAt,
       updatedAt: stored.updatedAt,
@@ -141,6 +145,7 @@ export function saveExpense(
     addYearToIndex(String(yearNum));
   }
 
+  recordTagsUsed(tags);
   notifyChange();
   return storedToExpense(stored);
 }
@@ -246,6 +251,7 @@ export function approveExpense(id: string): void {
     category: item.category,
     date: item.date,
     description: item.description,
+    tags: item.tags,
     source: item.source,
     createdAt: item.createdAt,
     updatedAt: new Date().toISOString(),
@@ -290,6 +296,7 @@ export function approveAllPending(): number {
       category: item.category,
       date: item.date,
       description: item.description,
+      tags: item.tags,
       source: item.source,
       createdAt: item.createdAt,
       updatedAt: now,
@@ -375,6 +382,7 @@ export function updateExpense(
 
     const existing = oldMonthExpenses[idx];
     const now = new Date().toISOString();
+    const tags = normalizeTagList(formData.tags);
 
     if (formData.date === dateBeforeEdit) {
       // Date unchanged — update in-place
@@ -382,6 +390,11 @@ export function updateExpense(
       existing.spentOn = formData.spentOn.trim();
       existing.category = formData.category.trim();
       existing.description = formData.description;
+      if (tags.length > 0) {
+        existing.tags = tags;
+      } else {
+        delete existing.tags;
+      }
       existing.updatedAt = now;
       saveYearData(oldYearNum, oldYearData);
     } else {
@@ -405,14 +418,21 @@ export function updateExpense(
         description: formData.description,
         updatedAt: now,
       };
+      if (tags.length > 0) {
+        updated.tags = tags;
+      } else {
+        delete updated.tags;
+      }
       newYearData[newMonthKey].push(updated);
       saveYearData(newYearNum, newYearData);
       addYearToIndex(String(newYearNum));
 
+      recordTagsUsed(tags);
       notifyChange();
       return storedToExpense(updated);
     }
 
+    recordTagsUsed(tags);
     notifyChange();
     return storedToExpense(existing);
   } catch {
@@ -476,6 +496,7 @@ export function seedExpenseToStorage(expense: Expense): void {
       category: expense.category,
       date: dateStr,
       description: expense.description,
+      tags: expense.tags,
       source: expense.source,
       createdAt: expense.createdAt.toISOString(),
       updatedAt: expense.updatedAt.toISOString(),
@@ -495,6 +516,7 @@ export function seedExpenseToStorage(expense: Expense): void {
     category: expense.category,
     date: dateStr,
     description: expense.description,
+    tags: expense.tags,
     source: expense.source,
     createdAt: expense.createdAt.toISOString(),
     updatedAt: expense.updatedAt.toISOString(),

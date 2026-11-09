@@ -6,6 +6,8 @@ export const VALID_FIXED_KEYS = [
   'appSettings',
   'userPreferences',
   'spentOnCategoryMapping',
+  'expenseTags',
+  'expenseTagsRecent',
 ] as const;
 
 const VALID_FIXED_KEY_SET = new Set<string>(VALID_FIXED_KEYS);
@@ -25,7 +27,7 @@ export function isValidImportKey(key: string): boolean {
  * Returns null when valid, or an error message string when invalid.
  */
 export function validateKeyShape(key: string, value: unknown): string | null {
-  if (key === 'expenseCategories') {
+  if (key === 'expenseCategories' || key === 'expenseTags' || key === 'expenseTagsRecent') {
     if (!Array.isArray(value)) return 'must be an array of strings';
     const bad = value.findIndex((v) => typeof v !== 'string');
     if (bad !== -1) return `item at index ${bad} is not a string`;

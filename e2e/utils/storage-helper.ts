@@ -31,6 +31,7 @@ export async function seedLocalStorage(
           category: e.category,
           date: dateStr,
           description: e.description,
+          tags: e.tags,
           source: e.source,
           createdAt: typeof e.createdAt === 'string' ? e.createdAt : new Date(e.createdAt).toISOString(),
           updatedAt: typeof e.updatedAt === 'string' ? e.updatedAt : new Date(e.updatedAt).toISOString(),
@@ -159,6 +160,7 @@ export async function seedApprovedExpenses(
     category: string;
     date: string; // "YYYY-MM-DD"
     description: string;
+    tags?: string[];
     source: string;
     createdAt: string;
     updatedAt: string;
