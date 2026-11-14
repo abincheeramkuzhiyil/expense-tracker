@@ -6,18 +6,30 @@ import SearchIcon from '@mui/icons-material/Search';
 import LocalOfferOutlinedIcon from '@mui/icons-material/LocalOfferOutlined';
 import StandardBottomSheet from '@/components/common/StandardBottomSheet';
 import SearchResultsTable, { SEARCH_PAGE_SIZE, SearchRangeChips } from './SearchResultsTable';
+import SearchTotalRow from './SearchTotalRow';
+import FacetChips from './FacetChips';
+import type { FacetChip } from './ChipPickerSheet';
 import TagFilterPanel from './TagFilterPanel';
 import { useSearchableExpenses } from '@/hooks/useSearchableExpenses';
 import { dismissKeyboardOnTouch } from '@/utils/dismissKeyboard';
 import {
+  NO_TAG,
   SearchQuery,
   SearchRange,
+  TagFacet,
   buildSpentOnIndex,
+  buildTagFacets,
+  filterByFacetTags,
   searchExpenses,
+  sumAmounts,
   suggestSpentOn,
 } from '@/utils/expenseSearch';
 
 const PAGE_SIZE = SEARCH_PAGE_SIZE;
+
+function tagChips(facets: TagFacet[]): FacetChip[] {
+  return facets.map((f) => ({ key: f.key, label: f.label, detail: String(f.count) }));
+}
 
 type SearchTab = 'keyword' | 'tags';
 
@@ -43,6 +55,7 @@ function SearchPanel({ open }: { open: boolean }) {
   const [query, setQuery] = useState<SearchQuery | null>(null);
   const [range, setRange] = useState<SearchRange>('all');
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  const [facetTags, setFacetTags] = useState<string[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
 
   // Wait for the sheet's slide-up transition before focusing, otherwise focus is lost.
@@ -65,9 +78,18 @@ function SearchPanel({ open }: { open: boolean }) {
     () => (query ? searchExpenses(expenses, query, range) : []),
     [expenses, query, range]
   );
+  const shown = useMemo(() => filterByFacetTags(results, facetTags), [results, facetTags]);
+  const facets = useMemo(() => buildTagFacets(results, facetTags), [results, facetTags]);
+  const shownTotal = useMemo(() => sumAmounts(shown), [shown]);
 
   function applyQuery(next: SearchQuery | null) {
     setQuery(next);
+    setFacetTags([]);
+    setVisibleCount(PAGE_SIZE);
+  }
+
+  function handleFacetChange(keys: string[]) {
+    setFacetTags(keys);
     setVisibleCount(PAGE_SIZE);
   }
 
@@ -163,11 +185,36 @@ function SearchPanel({ open }: { open: boolean }) {
         </Box>
       )}
 
-      {query && results.length > 0 && (
+      {query && results.length > 0 && facets.selected.length + facets.options.length > 0 && (
+        <FacetChips
+          testId="tag-facets"
+          heading="Narrow by tag"
+          selected={tagChips(facets.selected)}
+          options={tagChips(facets.options)}
+          multiple
+          exclusiveKey={NO_TAG}
+          sheetTitle="Narrow by tags"
+          sheetIcon={<LocalOfferOutlinedIcon fontSize="small" sx={{ color: 'primary.contrastText' }} />}
+          filterLabel="Filter tags"
+          onChange={handleFacetChange}
+        />
+      )}
+
+      {query && results.length > 0 && shown.length === 0 && (
+        <Box sx={{ mt: 4, textAlign: 'center' }} data-testid="search-no-tag-match">
+          <Typography>No expenses match the selected tags</Typography>
+          <Button variant="outlined" size="small" sx={{ mt: 2 }} onClick={() => handleFacetChange([])}>
+            Clear tags
+          </Button>
+        </Box>
+      )}
+
+      {query && shown.length > 0 && (
         <SearchResultsTable
-          results={results}
+          results={shown}
           visibleCount={visibleCount}
           onShowMore={() => setVisibleCount((c) => c + PAGE_SIZE)}
+          footer={<SearchTotalRow count={shown.length} total={shownTotal} />}
         />
       )}
     </Box>

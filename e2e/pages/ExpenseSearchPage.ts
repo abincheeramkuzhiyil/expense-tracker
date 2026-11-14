@@ -12,6 +12,7 @@ export class ExpenseSearchPage {
   readonly tagsTab: Locator;
   readonly tagInput: Locator;
   readonly tagTotal: Locator;
+  readonly total: Locator;
   readonly tagNoResults: Locator;
 
   constructor(page: Page) {
@@ -19,7 +20,9 @@ export class ExpenseSearchPage {
     this.keywordTab = page.getByRole('tab', { name: 'Keyword' });
     this.tagsTab = page.getByRole('tab', { name: 'Tags' });
     this.tagInput = page.getByRole('combobox', { name: 'Select tags' });
-    this.tagTotal = page.getByTestId('tag-total');
+    // Both tabs stay mounted, so only look at the total row of the visible tab
+    this.total = page.getByTestId('search-total').locator('visible=true');
+    this.tagTotal = this.total;
     this.tagNoResults = page.getByTestId('tag-no-results');
     this.openButton = page.getByRole('button', { name: 'Search expenses', exact: true });
     this.heading = page.getByRole('heading', { name: 'Search Expenses', exact: true });

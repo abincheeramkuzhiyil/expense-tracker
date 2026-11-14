@@ -80,14 +80,15 @@ test.describe('Filter by tags — tabs', () => {
     await expect(page.getByTestId('tag-pill')).toHaveCount(0);
   });
 
-  test('should leave keyword search unchanged and without a total row', async ({ page }) => {
+  test('should show the fixed total row in keyword search too', async ({ page }) => {
     await seedApprovedExpenses(page, EXPENSES);
     const search = await openSearch(page);
 
     await search.selectSuggestion('Train', /^Train\s*\d+$/);
 
     await expect(search.rows).toHaveCount(1);
-    await expect(search.tagTotal).toBeHidden();
+    await expect(search.total).toContainText('Total (1 expense)');
+    await expect(search.total).toContainText('4200.00');
   });
 });
 

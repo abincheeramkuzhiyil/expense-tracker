@@ -227,3 +227,124 @@ export function sumAmounts(expenses: StoredExpense[]): number {
   return cents / 100;
 }
 
+// ─── Narrowing chips (tags / categories) ──────────────────────────────────────
+
+/** Sentinel chip value meaning "expenses without any tag". Exclusive with real tags. */
+export const NO_TAG = '__no_tag__';
+
+export interface TagFacet {
+  /** Tag label, or NO_TAG. */
+  key: string;
+  label: string;
+  count: number;
+}
+
+export interface TagFacets {
+  /** Chips currently applied, in selection order. */
+  selected: TagFacet[];
+  /** Chips that can still be applied, most results first (ties alphabetical). Zero-count chips are omitted. */
+  options: TagFacet[];
+}
+
+export interface CategoryFacet {
+  label: string;
+  count: number;
+  amount: number;
+}
+
+/** Expenses matching every selected chip (AND). NO_TAG matches untagged expenses and cannot combine with real tags. */
+export function filterByFacetTags(expenses: StoredExpense[], selected: string[]): StoredExpense[] {
+  if (selected.length === 0) return expenses;
+  if (selected.includes(NO_TAG)) {
+    return selected.length === 1 ? expenses.filter((e) => !e.tags || e.tags.length === 0) : [];
+  }
+  const wanted = [...new Set(selected.map(normalizeText))];
+  return expenses.filter((e) => {
+    if (!e.tags || e.tags.length === 0) return false;
+    const have = new Set(e.tags.map(normalizeText));
+    return wanted.every((t) => have.has(t));
+  });
+}
+
+/**
+ * Chips for narrowing a result list by tag. Counts are what you would get by tapping the chip
+ * (computed on the results already narrowed by the selected chips), so zero-count chips are hidden.
+ * Returns no options and nothing selected when no result carries a tag.
+ */
+export function buildTagFacets(results: StoredExpense[], selected: string[]): TagFacets {
+  if (!results.some((e) => e.tags && e.tags.length > 0)) return { selected: [], options: [] };
+
+  const narrowed = filterByFacetTags(results, selected);
+  const chosen = new Set(selected.map(normalizeText));
+  const labelFor = new Map(buildTagIndex(results).map((t) => [normalizeText(t.label), t.label]));
+
+  const selectedChips: TagFacet[] = selected.map((key) => ({
+    key,
+    label: key === NO_TAG ? 'No tag' : labelFor.get(normalizeText(key)) ?? key,
+    count: narrowed.length,
+  }));
+
+  const options: TagFacet[] = buildTagIndex(narrowed)
+    .filter((t) => !chosen.has(normalizeText(t.label)))
+    .map((t) => ({ key: t.label, label: t.label, count: t.count }));
+
+  const untagged = narrowed.filter((e) => !e.tags || e.tags.length === 0).length;
+  if (untagged > 0 && !selected.includes(NO_TAG)) {
+    options.push({ key: NO_TAG, label: 'No tag', count: untagged });
+  }
+
+  options.sort((a, b) => b.count - a.count || a.label.localeCompare(b.label, undefined, { sensitivity: 'base' }));
+  return { selected: selectedChips, options };
+}
+
+/** Categories present in the results with their counts and totals, highest amount first. */
+export function buildCategoryFacets(results: StoredExpense[]): CategoryFacet[] {
+  const groups = new Map<string, { casings: Map<string, number>; count: number; cents: number }>();
+  for (const e of results) {
+    const key = normalizeText(e.category);
+    if (!key) continue;
+    const group = groups.get(key) ?? { casings: new Map<string, number>(), count: 0, cents: 0 };
+    const label = e.category.trim().replace(/\s+/g, ' ');
+    group.casings.set(label, (group.casings.get(label) ?? 0) + 1);
+    group.count += 1;
+    group.cents += Math.round(e.amount * 100);
+    groups.set(key, group);
+  }
+
+  return [...groups.values()]
+    .map((g) => {
+      let label = '';
+      let best = 0;
+      for (const [candidate, n] of g.casings) {
+        if (n > best || (n === best && candidate.localeCompare(label) < 0)) {
+          best = n;
+          label = candidate;
+        }
+      }
+      return { label, count: g.count, amount: g.cents / 100 };
+    })
+    .sort((a, b) => b.amount - a.amount || a.label.localeCompare(b.label, undefined, { sensitivity: 'base' }));
+}
+
+/** Expenses in the given category (case/accent-insensitive); a null category keeps everything. */
+export function filterByCategory(expenses: StoredExpense[], category: string | null): StoredExpense[] {
+  if (!category) return expenses;
+  const wanted = normalizeText(category);
+  return expenses.filter((e) => normalizeText(e.category) === wanted);
+}
+
+/** Every word of `value` must appear in Spent On, Category or Description. An empty value matches everything. */
+export function matchesKeyword(expense: StoredExpense, value: string): boolean {
+  const normalized = normalizeText(value);
+  if (!normalized) return true;
+  const haystack = normalizeText(`${expense.spentOn} ${expense.category} ${expense.description}`);
+  return normalized.split(' ').every((t) => haystack.includes(t));
+}
+
+/** Result-row caption: first two tags joined by " · " then "+N" for the rest, e.g. "Son · Gifts +1". */
+export function formatTagCaption(tags: string[] | undefined): string {
+  if (!tags || tags.length === 0) return '';
+  const shown = tags.slice(0, 2).join(' · ');
+  return tags.length > 2 ? `${shown} +${tags.length - 2}` : shown;
+}
+

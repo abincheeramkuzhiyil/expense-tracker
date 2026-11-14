@@ -16,9 +16,10 @@ import {
   Typography,
 } from '@mui/material';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
+import LocalOfferOutlinedIcon from '@mui/icons-material/LocalOfferOutlined';
 import DayDetailModal from './DayDetailModal';
 import type { StoredExpense } from '@/types/expense.types';
-import { SearchRange, dateKeyToDate, formatResultDate } from '@/utils/expenseSearch';
+import { SearchRange, dateKeyToDate, formatResultDate, formatTagCaption } from '@/utils/expenseSearch';
 
 export const SEARCH_PAGE_SIZE = 50;
 
@@ -101,6 +102,17 @@ export default function SearchResultsTable({
                         <Typography variant="caption" color="text.secondary" noWrap display="block">
                           {e.description}
                         </Typography>
+                      )}
+                      {e.tags && e.tags.length > 0 && (
+                        <Box
+                          data-testid="search-row-tags"
+                          sx={{ display: 'flex', alignItems: 'center', gap: 0.5, color: 'primary.main' }}
+                        >
+                          <LocalOfferOutlinedIcon sx={{ fontSize: 13, flexShrink: 0 }} />
+                          <Typography variant="caption" noWrap sx={{ minWidth: 0 }}>
+                            {formatTagCaption(e.tags)}
+                          </Typography>
+                        </Box>
                       )}
                     </TableCell>
                     <TableCell align="right" sx={{ px: 1 }}>

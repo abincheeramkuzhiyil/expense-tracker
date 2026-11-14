@@ -1,16 +1,33 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { Autocomplete, Box, Button, Stack, TextField, Typography } from '@mui/material';
+import {
+  Autocomplete,
+  Box,
+  Button,
+  IconButton,
+  Stack,
+  TextField,
+  Typography,
+} from '@mui/material';
+import SearchIcon from '@mui/icons-material/Search';
+import CategoryIcon from '@mui/icons-material/Category';
 import TagPills from './TagPills';
 import SearchResultsTable, { SEARCH_PAGE_SIZE, SearchRangeChips } from './SearchResultsTable';
+import SearchTotalRow from './SearchTotalRow';
+import FacetChips from './FacetChips';
+import type { FacetChip } from './ChipPickerSheet';
 import { useSearchableExpenses } from '@/hooks/useSearchableExpenses';
 import { dismissKeyboardOnTouch } from '@/utils/dismissKeyboard';
 import {
+  CategoryFacet,
   SearchRange,
   TagSuggestion,
+  buildCategoryFacets,
   buildTagIndex,
+  filterByCategory,
   filterByTags,
+  matchesKeyword,
   sumAmounts,
   suggestTags,
 } from '@/utils/expenseSearch';
@@ -19,9 +36,18 @@ interface TagFilterPanelProps {
   open: boolean;
 }
 
+function formatChipAmount(amount: number): string {
+  return amount.toLocaleString('en-IN', { maximumFractionDigits: 2 });
+}
+
+function categoryChip(facet: CategoryFacet): FacetChip {
+  return { key: facet.label, label: facet.label, detail: formatChipAmount(facet.amount) };
+}
+
 /**
  * "Tags" tab of the Search sheet: pick one or more tags and list every expense that has ALL of them,
- * with a fixed Total row. Kept separate from the keyword search so the two never mix.
+ * with a fixed Total row. Category chips and an optional keyword field narrow the result further.
+ * Kept separate from the keyword search so the two never mix.
  */
 export default function TagFilterPanel({ open }: TagFilterPanelProps) {
   const expenses = useSearchableExpenses(open);
@@ -31,21 +57,67 @@ export default function TagFilterPanel({ open }: TagFilterPanelProps) {
   const [inputValue, setInputValue] = useState('');
   const [range, setRange] = useState<SearchRange>('all');
   const [visibleCount, setVisibleCount] = useState(SEARCH_PAGE_SIZE);
+  const [categoryKeys, setCategoryKeys] = useState<string[]>([]);
+  const [keywordOpen, setKeywordOpen] = useState(false);
+  const [keyword, setKeyword] = useState('');
 
+  const base = useMemo(() => filterByTags(expenses, selected, range), [expenses, selected, range]);
+  const matched = useMemo(
+    () => (keyword.trim() ? base.filter((e) => matchesKeyword(e, keyword)) : base),
+    [base, keyword]
+  );
+  const categoryFacets = useMemo(() => buildCategoryFacets(matched), [matched]);
   const results = useMemo(
-    () => filterByTags(expenses, selected, range),
-    [expenses, selected, range]
+    () => filterByCategory(matched, categoryKeys[0] ?? null),
+    [matched, categoryKeys]
   );
   const total = useMemo(() => sumAmounts(results), [results]);
   const hasTags = index.length > 0;
+  const narrowing = categoryKeys.length > 0 || keyword.trim().length > 0;
+
+  const selectedCategory = categoryKeys[0];
+  const selectedFacet = categoryFacets.find((f) => f.label === selectedCategory);
+  const categorySelectedChips: FacetChip[] = selectedCategory
+    ? [
+        selectedFacet
+          ? categoryChip(selectedFacet)
+          : { key: selectedCategory, label: selectedCategory, detail: '0' },
+      ]
+    : [];
+  const categoryOptionChips = categoryFacets
+    .filter((f) => f.label !== selectedCategory)
+    .map(categoryChip);
 
   function changeSelected(next: string[]) {
     setSelected(next);
+    setCategoryKeys([]);
     setVisibleCount(SEARCH_PAGE_SIZE);
   }
 
   function handleRangeChange(next: SearchRange) {
     setRange(next);
+    setVisibleCount(SEARCH_PAGE_SIZE);
+  }
+
+  function handleCategoryChange(keys: string[]) {
+    setCategoryKeys(keys.slice(-1));
+    setVisibleCount(SEARCH_PAGE_SIZE);
+  }
+
+  function handleKeywordChange(value: string) {
+    setKeyword(value);
+    setVisibleCount(SEARCH_PAGE_SIZE);
+  }
+
+  function toggleKeyword() {
+    if (keywordOpen) handleKeywordChange('');
+    setKeywordOpen(!keywordOpen);
+  }
+
+  function clearNarrowing() {
+    setCategoryKeys([]);
+    setKeyword('');
+    setKeywordOpen(false);
     setVisibleCount(SEARCH_PAGE_SIZE);
   }
 
@@ -106,6 +178,44 @@ export default function TagFilterPanel({ open }: TagFilterPanelProps) {
         </Box>
       )}
 
+      {selected.length > 0 && base.length > 0 && (
+        <>
+          <FacetChips
+            testId="category-facets"
+            heading="Narrow by category"
+            selected={categorySelectedChips}
+            options={categoryOptionChips}
+            multiple={false}
+            sheetTitle="Narrow by category"
+            sheetIcon={<CategoryIcon fontSize="small" sx={{ color: 'primary.contrastText' }} />}
+            filterLabel="Filter categories"
+            onChange={handleCategoryChange}
+            trailing={
+              <IconButton
+                aria-label="Search within results"
+                aria-expanded={keywordOpen}
+                onClick={toggleKeyword}
+                color={keywordOpen ? 'primary' : 'default'}
+                sx={{ flexShrink: 0 }}
+              >
+                <SearchIcon />
+              </IconButton>
+            }
+          />
+          {keywordOpen && (
+            <TextField
+              variant="filled"
+              fullWidth
+              autoFocus
+              label="Spent On or keyword (optional)"
+              value={keyword}
+              onChange={(e) => handleKeywordChange(e.target.value)}
+              sx={{ mt: 1 }}
+            />
+          )}
+        </>
+      )}
+
       <SearchRangeChips range={range} onChange={handleRangeChange} />
 
       {hasTags && selected.length === 0 && (
@@ -117,8 +227,17 @@ export default function TagFilterPanel({ open }: TagFilterPanelProps) {
 
       {selected.length > 0 && results.length === 0 && (
         <Box sx={{ mt: 4, textAlign: 'center' }} data-testid="tag-no-results">
-          <Typography>No expenses have all of these tags</Typography>
+          <Typography>
+            {base.length === 0
+              ? 'No expenses have all of these tags'
+              : 'No expenses match these filters'}
+          </Typography>
           <Stack direction="row" spacing={1} justifyContent="center" sx={{ mt: 2 }}>
+            {narrowing && (
+              <Button variant="outlined" size="small" onClick={clearNarrowing}>
+                Clear filters
+              </Button>
+            )}
             <Button variant="outlined" size="small" onClick={() => changeSelected([])}>
               Clear tags
             </Button>
@@ -136,30 +255,7 @@ export default function TagFilterPanel({ open }: TagFilterPanelProps) {
           results={results}
           visibleCount={visibleCount}
           onShowMore={() => setVisibleCount((c) => c + SEARCH_PAGE_SIZE)}
-          footer={
-            <Box
-              data-testid="tag-total"
-              sx={{
-                position: 'sticky',
-                bottom: 0,
-                mt: 1,
-                px: 2,
-                py: 1.5,
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                bgcolor: 'background.paper',
-                borderTop: 1,
-                borderColor: 'divider',
-                boxShadow: '0 -2px 4px rgba(0, 0, 0, 0.08)',
-              }}
-            >
-              <Typography sx={{ fontWeight: 'bold' }}>
-                Total ({results.length} {results.length === 1 ? 'expense' : 'expenses'})
-              </Typography>
-              <Typography sx={{ fontWeight: 'bold' }}>{total.toFixed(2)}</Typography>
-            </Box>
-          }
+          footer={<SearchTotalRow count={results.length} total={total} />}
         />
       )}
     </Box>
